@@ -1,16 +1,15 @@
 package com.example.acexproyecto.views
 
+import Calendario
 import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -18,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -46,8 +44,12 @@ fun HomeView(navController: NavController, onLoadingComplete: () -> Unit) {
     Scaffold(
         topBar = { TopBar(navController) }, // Barra superior con el logo
 
-        content = {
-            ContentDetailView(navController) // Contenido principal
+        content = { paddingValues ->
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)) {
+                ContentDetailView(navController) // Contenido principal
+            }
         },
         bottomBar = { BottomDetailBar(navController) }, // Barra inferior
     )
@@ -56,6 +58,8 @@ fun HomeView(navController: NavController, onLoadingComplete: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(navController: NavController) {
+    var showDialog by remember { mutableStateOf(false) }
+
     TopAppBar(
         title = {
             Box(
@@ -67,6 +71,15 @@ fun TopBar(navController: NavController) {
                     contentDescription = "Logo de la App",
                     modifier = Modifier
                         .size(100.dp) // Ajustar aquí el tamaño del logo
+                )
+            }
+        },
+        navigationIcon = {
+            IconButton(onClick = { showDialog = true }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.faq),
+                    contentDescription = "FAQ",
+                    tint = Color.White
                 )
             }
         },
@@ -95,50 +108,51 @@ fun TopBar(navController: NavController) {
             containerColor = TopAppBarBackground
         ),
     )
-}
-
-@Composable
-fun ContentDetailView(navController: NavController) {
-    var showDialog by remember { mutableStateOf(false) } // Variable para mostrar el pop-up de preguntas frecuentes
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(15.dp)
-    ) {
-        item {
-            // Información del usuario
-            UserInformation()
-        }
-        item {
-            // Espacio para el calendario
-            CalendarView()
-        }
-        item {
-            //  espacio entre el calendario y las actividades
-            Spacer(modifier = Modifier.height(15.dp))
-
-            // LazyRow con cartas de actividades
-            LazyRow(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(5) { index ->
-                    ActivityCardItem(activityName = "Actividad $index", activityDate = "01-02-2025", index = index, navController)
-                }
-            }
-        }
-        item {
-            // Sección de Preguntas Frecuentes
-            FAQSection(onClick = { showDialog = true })
-        }
-    }
-
     // Mostrar el diálogo con las preguntas frecuentes
     if (showDialog) {
         FAQDialog(onDismiss = { showDialog = false })
     }
 }
 
+@Composable
+fun ContentDetailView(navController: NavController) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 12.dp) // Ajusta el padding para que no se superponga con el BottomAppBar
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(15.dp)
+        ) {
+            item {
+                // Información del usuario
+                UserInformation()
+            }
+            item {
+                // Espacio para el calendario
+                CalendarView()
+            }
+            item {
+                // Espacio entre el calendario y las actividades
+                Spacer(modifier = Modifier.height(15.dp))
+            }
+        }
+
+        // LazyRow con cartas de actividades alineado en la parte inferior
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(8.dp)
+        ) {
+            items(5) { index ->
+                ActivityCardItem(activityName = "Actividad $index", activityDate = "01-02-2025", index = index, navController)
+            }
+        }
+    }
+}
 @Composable
 fun FAQSection(onClick: () -> Unit) {
     // Este es el ítem de Preguntas Frecuentes en el contenido principal
@@ -192,15 +206,15 @@ fun FAQDialog(onDismiss: () -> Unit) {
 fun UserInformation() {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(180.dp),
+            .fillMaxWidth(),
         contentAlignment = Alignment.CenterStart
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             // Row para la foto, nombre y email
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(30.dp)
+                horizontalArrangement = Arrangement.spacedBy(30.dp),
+                modifier = Modifier.padding(bottom = 16.dp)
             ) {
                 // Ícono de perfil más grande
                 if (Usuario.photoPath.isNullOrEmpty()) {
@@ -233,10 +247,6 @@ fun UserInformation() {
                     Text(Usuario.displayName, fontSize = 20.sp, color = TextPrimary) // Color de texto
                     Text(Usuario.account, fontSize = 16.sp, color = TextPrimary) // Color de texto
                 }
-
-                Spacer(modifier = Modifier.weight(1f))
-                // Botón de preguntas frecuentes
-                //FAQPopupButton()
             }
         }
     }
@@ -278,7 +288,6 @@ fun CalendarView() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(250.dp)
     ) {
         Box(
             modifier = Modifier.fillMaxWidth(), // Hace que el Box ocupe todo el ancho
@@ -294,12 +303,7 @@ fun CalendarView() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Image(
-                painter = painterResource(id = R.drawable.calendario),
-                contentDescription = "Calendario",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
+            Calendario("", "")
 
         }
 
@@ -321,7 +325,6 @@ fun ActivityCardItem(activityName: String, activityDate: String, index: Int, nav
     ) {
         Column(
             modifier = Modifier
-                .height(180.dp)
                 .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
