@@ -43,7 +43,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 fun ActivityDetailView(navController: NavController) {
    //cambiar la top bar para añadir el boton de regreso
     Scaffold(
-        topBar = { TopBar() },
+        topBar = { TopBar(navController) },
         content = { paddingValues ->
             ActivityDetailContent(navController, modifier = Modifier.padding(paddingValues))
         },

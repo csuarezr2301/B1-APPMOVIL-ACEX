@@ -30,18 +30,20 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
 import com.example.acexproyecto.R
+import com.example.acexproyecto.model.Usuario
 import com.example.acexproyecto.ui.theme.*  // Importa los colores personalizados
+import com.microsoft.identity.client.ISingleAccountPublicClientApplication
+import com.microsoft.identity.client.exception.MsalException
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun HomeView(navController: NavController, displayName: String, photoPath: String, account: String) {
+fun HomeView(navController: NavController) {
     // Estructura principal con la barra inferior
     Scaffold(
-        topBar = { TopBar() }, // Barra superior con el logo
+        topBar = { TopBar(navController) }, // Barra superior con el logo
 
         content = {
-            Log.e("HomeView", "displayName: $displayName, photoPath: $photoPath, account: $account")
-            ContentDetailView(navController, displayName, photoPath, account) // Contenido principal
+            ContentDetailView(navController) // Contenido principal
         },
         bottomBar = { BottomDetailBar(navController) }, // Barra inferior
     )
@@ -49,7 +51,7 @@ fun HomeView(navController: NavController, displayName: String, photoPath: Strin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar() {
+fun TopBar(navController: NavController) {
     TopAppBar(
         title = {
             Box(
@@ -64,6 +66,27 @@ fun TopBar() {
                 )
             }
         },
+        actions = {
+            IconButton(onClick = {
+                // Implement your logout logic here
+                MsalAppHolder.msalApp?.signOut(object : ISingleAccountPublicClientApplication.SignOutCallback {
+                    override fun onSignOut() {
+                        // Navigate back to the login screen
+                        navController.navigate("principal")
+                    }
+
+                    override fun onError(exception: MsalException) {
+                        Log.e("TopBar", "Error during sign out", exception)
+                    }
+                })
+            }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.logout),
+                    contentDescription = "Logout",
+                    tint = Color.White
+                )
+            }
+        },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = TopAppBarBackground
         ),
@@ -71,7 +94,7 @@ fun TopBar() {
 }
 
 @Composable
-fun ContentDetailView(navController: NavController, displayName: String, photoPath: String, account: String) {
+fun ContentDetailView(navController: NavController) {
     var showDialog by remember { mutableStateOf(false) } // Variable para mostrar el pop-up de preguntas frecuentes
 
     LazyColumn(
@@ -81,8 +104,7 @@ fun ContentDetailView(navController: NavController, displayName: String, photoPa
     ) {
         item {
             // Información del usuario
-            Log.e("HomeView", "displayName: $displayName, photoPath: $photoPath")
-            UserInformation(displayName, photoPath, account)
+            UserInformation()
         }
         item {
             // Espacio para el calendario
@@ -163,7 +185,7 @@ fun FAQDialog(onDismiss: () -> Unit) {
 
 
 @Composable
-fun UserInformation(displayName: String, photoPath: String, account: String) {
+fun UserInformation() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -171,14 +193,13 @@ fun UserInformation(displayName: String, photoPath: String, account: String) {
         contentAlignment = Alignment.CenterStart
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            Log.e("HomeView", "displayName: $displayName, photoPath: $photoPath")
             // Row para la foto, nombre y email
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(30.dp)
             ) {
                 // Ícono de perfil más grande
-                if (photoPath.isNullOrEmpty()) {
+                if (Usuario.photoPath.isNullOrEmpty()) {
                     Box(
                         modifier = Modifier
                             .size(30.dp)
@@ -187,14 +208,14 @@ fun UserInformation(displayName: String, photoPath: String, account: String) {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = getInitials(displayName),
+                            text = getInitials(Usuario.displayName),
                             style = MaterialTheme.typography.bodyLarge,
                             color = Color.White
                         )
                     }
                 } else {
                     Image(
-                        painter = rememberImagePainter(data = photoPath),
+                        painter = rememberImagePainter(data = Usuario.photoPath),
                         contentDescription = "Profile Image",
                         modifier = Modifier
                             .size(40.dp)
@@ -205,8 +226,8 @@ fun UserInformation(displayName: String, photoPath: String, account: String) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(displayName, fontSize = 20.sp, color = TextPrimary) // Color de texto
-                    Text(account, fontSize = 16.sp, color = TextPrimary) // Color de texto
+                    Text(Usuario.displayName, fontSize = 20.sp, color = TextPrimary) // Color de texto
+                    Text(Usuario.account, fontSize = 16.sp, color = TextPrimary) // Color de texto
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -371,5 +392,5 @@ fun BottomDetailBar(navController: NavController) {
 fun PreviewHomeView() {
     // Crear un NavController simulado para el preview
     val navController = rememberNavController()
-    HomeView(navController = navController, displayName = "Usuario de Prueba", photoPath = "", account = "")
+    HomeView(navController = navController)
 }

@@ -15,7 +15,7 @@ import androidx.navigation.compose.rememberNavController
 @Composable
 fun chatView(navController: NavController) {
     Scaffold(
-        topBar = {TopBar()},
+        topBar = {TopBar(navController)},
         content = {
 
         },

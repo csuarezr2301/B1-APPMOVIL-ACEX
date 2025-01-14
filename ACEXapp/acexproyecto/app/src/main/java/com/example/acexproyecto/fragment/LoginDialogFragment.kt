@@ -41,6 +41,8 @@ class LoginDialogFragment(private val onSuccess: (IAuthenticationResult, String,
     private var isSuccessCalled = false
     private lateinit var listener: LoginDialogListener
     private var isLoading = mutableStateOf(false)
+    private var graphAccessToken: String? = null
+    private var apiAccessToken: String? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -62,9 +64,19 @@ class LoginDialogFragment(private val onSuccess: (IAuthenticationResult, String,
         super.onViewCreated(view, savedInstanceState)
         isLoading.value = true
 
+        val graphScopes = listOf(
+            "User.Read",
+            "Calendars.Read"
+        )
+
+        val apiScopes = listOf(
+            "api://7c80ff29-dc1d-47a3-9cc3-78997d1de943/access_as_user"
+        )
+
+
         val parameters = AcquireTokenParameters.Builder()
             .startAuthorizationFromActivity(requireActivity())
-            .withScopes(listOf("User.Read", "Calendars.Read", "api://7c80ff29-dc1d-47a3-9cc3-78997d1de943/access_as_user")) // Add the required permissions
+            .withScopes(graphScopes) // Add the required permissions
             .withPrompt(Prompt.SELECT_ACCOUNT)
             .withCallback(object : AuthenticationCallback {
                 override fun onSuccess(authenticationResult: IAuthenticationResult) {
@@ -93,6 +105,31 @@ class LoginDialogFragment(private val onSuccess: (IAuthenticationResult, String,
             .build()
 
         MsalAppHolder.msalApp?.acquireToken(parameters)
+
+        val apiParameters = AcquireTokenParameters.Builder()
+            .startAuthorizationFromActivity(requireActivity())
+            .withScopes(apiScopes)
+            .withPrompt(Prompt.SELECT_ACCOUNT)
+            .withCallback(object : AuthenticationCallback {
+                override fun onSuccess(authenticationResult: IAuthenticationResult) {
+                    val apiAccessToken = authenticationResult.accessToken
+                    Log.d("Authentication", "Custom API Authentication successful with token: $apiAccessToken")
+                    // Use the apiAccessToken to authenticate with your API
+                }
+
+                override fun onError(exception: MsalException) {
+                    // Handle authentication error
+                    Log.e("Authentication", "Custom API Error: ${exception.message}")
+                }
+
+                override fun onCancel() {
+                    // Handle user canceling the authentication
+                    Log.d("Authentication", "Custom API Authentication canceled")
+                }
+            })
+            .build()
+
+        MsalAppHolder.msalApp?.acquireToken(apiParameters)
     }
 
 

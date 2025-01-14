@@ -31,7 +31,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 fun LocalizacionView(navController: NavController) {
     // Estructura principal con la barra inferior
     Scaffold(
-        topBar = { TopBar() }, // Barra superior con el logo
+        topBar = { TopBar(navController) }, // Barra superior con el logo
 
         content = { paddingValues ->
             // Pasamos los valores de padding a la vista del mapa para que no quede debajo de la barra inferior

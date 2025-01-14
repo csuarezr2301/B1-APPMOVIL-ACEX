@@ -43,7 +43,7 @@ val TextColor = Color(0xFF000000) // Text color (black)
 fun ActivitiesView(navController: NavController) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        topBar = {TopBar()},
+        topBar = {TopBar(navController)},
         content = { paddingValues ->
             Box(
                 modifier = Modifier

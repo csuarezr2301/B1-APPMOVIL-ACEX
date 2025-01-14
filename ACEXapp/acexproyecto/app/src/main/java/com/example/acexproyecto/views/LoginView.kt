@@ -57,6 +57,7 @@ import java.io.FileOutputStream
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
+import com.example.acexproyecto.model.Usuario
 
 
 object MsalAppHolder {
@@ -105,7 +106,7 @@ fun LoginView(navController: NavController) {
                     override fun onSuccess(authenticationResult: IAuthenticationResult) {
                         // Manejar el éxito de la autenticación
                         val accessToken = authenticationResult.accessToken
-                        Log.d("LoginView", "Access Token: $accessToken")
+                        //Log.d("LoginView", "Access Token: $accessToken")
                         isLoading = false
                         fetchUserProfile(context, authenticationResult) { name, path ->
                             displayName = name
@@ -117,11 +118,13 @@ fun LoginView(navController: NavController) {
 
                     override fun onError(exception: MsalException) {
                         // Manejar el error de la autenticación
+                        Log.e("LoginView", "Authentication error: ${exception.message}", exception)
                         isLoading = false
                     }
 
                     override fun onCancel() {
                         // Manejar la cancelación de la autenticación
+                        Log.d("LoginView", "Authentication canceled")
                         isLoading = false
                     }
                 })
@@ -136,10 +139,10 @@ fun LoginView(navController: NavController) {
 
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn) {
-            val encodedDisplayName = URLEncoder.encode(displayName, StandardCharsets.UTF_8.toString())
-            val encodedPhotoPath = URLEncoder.encode(photoPath, StandardCharsets.UTF_8.toString())
-            val encondedAccount = URLEncoder.encode(account, StandardCharsets.UTF_8.toString())
-            navController.navigate("home/$encodedDisplayName/$encodedPhotoPath/$encondedAccount") {
+            Usuario.displayName = displayName
+            Usuario.photoPath = photoPath
+            Usuario.account = account
+            navController.navigate("home") {
                 popUpTo("principal") { inclusive = true }
             }
         }
@@ -310,8 +313,8 @@ private fun fetchUserProfile(context: Context, authenticationResult: IAuthentica
             val inputStream = try {
                 graphClient.me().photo().content().buildRequest().get()
             } catch (e: GraphServiceException) {
-                val errorResponse = e.error as GraphErrorResponse
-                if (errorResponse.error?.code == "ImageNotFound") {
+                if (e.serviceError?.code == "ImageNotFound") {
+                    Log.e("LoginDialogFragment", "La imagen no se ha encontrado")
                     null
                 } else {
                     throw e

@@ -37,7 +37,7 @@ import com.example.acexproyecto.ui.theme.* // Asegúrate de importar tus colores
 fun SettingsView(navController: NavController, isDarkMode: Boolean, onThemeChanged: (Boolean) -> Unit) {
     // Estructura principal con la barra inferior
     Scaffold(
-        topBar = {TopBar()},
+        topBar = {TopBar(navController)},
         content = { paddingValues ->
             Box(
                 modifier = Modifier
