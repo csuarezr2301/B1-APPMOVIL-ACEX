@@ -3,5 +3,10 @@
 
     <style name="Theme.Sesion3_03_Base" parent="android:Theme.Material.Light.NoActionBar" />
 
+    <style name="Theme.AppACEX.Dialog" parent="Theme.AppCompat.Dialog">
+        <!-- Customize your dialog theme here. -->
+        <item name="android:windowMinWidthMajor">50%</item>
+        <item name="android:windowMinWidthMinor">50%</item>
+    </style>
 
 </resources>

@@ -23,10 +23,48 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.acexproyecto.R
+import com.example.acexproyecto.fragment.LoginDialogFragment
 import com.example.acexproyecto.ui.theme.Background
 import com.example.acexproyecto.ui.theme.TextPrimary
 import com.example.acexproyecto.ui.theme.ButtonPrimary
 import com.example.acexproyecto.ui.theme.Accent
+import com.microsoft.identity.client.ISingleAccountPublicClientApplication
+import android.app.Application
+import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.fragment.app.FragmentActivity
+import com.microsoft.identity.client.AcquireTokenParameters
+import com.microsoft.identity.client.AuthenticationCallback
+import com.microsoft.identity.client.IAuthenticationResult
+import com.microsoft.identity.client.IPublicClientApplication
+import com.microsoft.identity.client.Prompt
+import com.microsoft.identity.client.PublicClientApplication
+import com.microsoft.identity.client.exception.MsalException
+
+
+object MsalAppHolder {
+    var msalApp: ISingleAccountPublicClientApplication? = null
+
+    fun initialize(application: Application, onInitialized: () -> Unit) {
+        PublicClientApplication.createSingleAccountPublicClientApplication(
+            application,
+            R.raw.auth_config_single_account,
+            object : IPublicClientApplication.ISingleAccountApplicationCreatedListener {
+                override fun onCreated(app: ISingleAccountPublicClientApplication) {
+                    msalApp = app
+                    Log.d("MainActivity", "Created MSAL app")
+                    onInitialized()
+                }
+
+                override fun onError(exception: MsalException) {
+                    Log.e("MainActivity", "Error initializing MSAL app", exception)
+                }
+            }
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,12 +72,64 @@ fun LoginView(navController: NavController) {
     // Variables de estado para el nombre de usuario y la contraseña
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val context = LocalContext.current as ComponentActivity
+    var isLoading by remember { mutableStateOf(false) }
+    var isLoggedIn by remember { mutableStateOf(false) }
+
+
+    fun showLoginDialog() {
+        val msalApp = MsalAppHolder.msalApp
+        if (msalApp != null) {
+            val parameters = AcquireTokenParameters.Builder()
+                .startAuthorizationFromActivity(context)
+                .withScopes(listOf("User.Read", "Calendars.Read"))
+                .withPrompt(Prompt.SELECT_ACCOUNT)
+                .withCallback(object : AuthenticationCallback {
+                    override fun onSuccess(authenticationResult: IAuthenticationResult) {
+                        // Manejar el éxito de la autenticación
+                        val accessToken = authenticationResult.accessToken
+                        Log.d("LoginView", "Access Token: $accessToken")
+                        isLoading = false
+                        isLoggedIn = true
+                    }
+
+                    override fun onError(exception: MsalException) {
+                        // Manejar el error de la autenticación
+                        isLoading = false
+                    }
+
+                    override fun onCancel() {
+                        // Manejar la cancelación de la autenticación
+                        isLoading = false
+                    }
+                })
+                .build()
+
+            isLoading = true
+            msalApp.acquireToken(parameters)
+        } else {
+
+        }
+    }
+
+    LaunchedEffect(isLoading) {
+        if (!isLoading && isLoggedIn) {
+            navController.navigate("home")
+        }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Background) // Fondo general
     ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color = MaterialTheme.colorScheme.primary
+            )
+        } else {
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -139,6 +229,7 @@ fun LoginView(navController: NavController) {
             Button(
                 onClick = {
                     // Aquí rediriges al usuario al flujo de inicio de sesión de Microsoft
+                    showLoginDialog()
                 },
                 modifier = Modifier
                     .fillMaxWidth(0.6f)
@@ -167,6 +258,8 @@ fun LoginView(navController: NavController) {
                 Text(text = "He olvidado la contraseña", color = Accent)
             }
         }
+    }
+
     }
 }
 

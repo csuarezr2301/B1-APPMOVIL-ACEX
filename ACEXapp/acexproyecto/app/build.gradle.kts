@@ -55,11 +55,18 @@ android {
         kotlinCompilerExtensionVersion = "1.5.1"
     }
     packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        excludes += "META-INF/DEPENDENCIES"
+        excludes += "META-INF/INDEX.LIST"
+        excludes += "META-INF/AL2.0"
+        excludes += "META-INF/LGPL2.1"
+        excludes += "META-INF/LICENSE.md"
+        excludes += "META-INF/NOTICE.md"
+        excludes += "META-INF/io.netty.versions.properties"
+        excludes += "META-INF/license/LICENSE.aix-netbsd.txt"
+        excludes += "google/firestore/v1/query.proto"
         }
     }
-}
+
 
 dependencies {
 
@@ -105,4 +112,10 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // MSAL
+    implementation("com.microsoft.identity.client:msal:1.4.0")
+    implementation("com.microsoft.graph:microsoft-graph:3.0.0") {
+        exclude(group = "javax.activation", module = "activation")
+    }
 }
