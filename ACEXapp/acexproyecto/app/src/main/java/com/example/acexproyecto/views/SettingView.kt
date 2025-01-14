@@ -5,12 +5,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -196,7 +190,7 @@ fun UserInfo() {
                 .align(Alignment.CenterHorizontally)
         ) {
             Image(
-                painter = painterResource(id = R.drawable.images),
+                painter = painterResource(id = R.drawable.microsoft),
                 contentDescription = "Perfil",
                 modifier = Modifier
                     .size(120.dp)
