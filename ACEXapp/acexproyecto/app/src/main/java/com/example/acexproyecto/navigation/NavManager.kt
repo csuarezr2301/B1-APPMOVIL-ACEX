@@ -14,7 +14,7 @@ import com.example.acexproyecto.views.HomeView
 import com.example.acexproyecto.views.LoginView
 import com.example.acexproyecto.views.LocalizacionView
 import com.example.acexproyecto.views.SettingsView
-import com.example.acexproyecto.views.profileView
+import com.example.acexproyecto.views.chatView
 
 
 
@@ -40,7 +40,7 @@ fun NavManager(navController: NavHostController, isDarkMode: Boolean, onThemeCha
         }
 
         // Pantalla de ajustes y perfil
-        composable("settings") {
+        composable("settingsandprofile") {
             SettingsView(navController, isDarkMode, onThemeChanged)
         }
 
@@ -50,8 +50,8 @@ fun NavManager(navController: NavHostController, isDarkMode: Boolean, onThemeCha
         }
 
         // Pantalla de chat
-        composable("profile") {
-            profileView(navController)
+        composable("chat") {
+            chatView(navController)
         }
 
         // Pantalla de actividad detalles

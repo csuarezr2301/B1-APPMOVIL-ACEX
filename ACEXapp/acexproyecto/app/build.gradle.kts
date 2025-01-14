@@ -29,6 +29,18 @@ android {
             )
         }
     }
+    // Configuración de compatibilidad con Java 8
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    // Habilitar ViewBinding
+    buildFeatures {
+        viewBinding = true
+        compose = true // Ya lo tienes habilitado, solo recordamos que Compose sigue habilitado
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -74,6 +86,17 @@ dependencies {
     implementation("com.google.maps.android:maps-compose:2.0.0")
 
     implementation("io.coil-kt:coil-compose:2.2.0")
+
+    // Dependencias de CameraX
+    implementation ("androidx.camera:camera-core:1.1.0-beta01")
+    implementation ("androidx.camera:camera-camera2:1.1.0-beta01")
+    implementation ("androidx.camera:camera-lifecycle:1.1.0-beta01")
+    implementation ("androidx.camera:camera-video:1.1.0-beta01")
+    implementation ("androidx.camera:camera-view:1.1.0-beta01")
+    implementation ("androidx.camera:camera-extensions:1.1.0-beta01")
+
+    implementation ("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation(libs.androidx.appcompat)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

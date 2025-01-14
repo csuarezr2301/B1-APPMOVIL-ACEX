@@ -324,17 +324,17 @@ fun BottomDetailBar(navController: NavController) {
             }
 
             IconButton(
-                onClick = { navController.navigate("profile") },
+                onClick = { navController.navigate("chat") },
                 modifier = Modifier.size(65.dp)
             ) {
-                Icon(imageVector = Icons.Filled.Person, contentDescription = "Profile", tint = TextPrimary)
+                Icon(imageVector = Icons.Filled.Email , contentDescription = "Chat", tint = TextPrimary)
             }
 
             IconButton(
-                onClick = { navController.navigate("settings") },
+                onClick = { navController.navigate("settingsandprofile") },
                 modifier = Modifier.size(65.dp)
             ) {
-                Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings", tint = TextPrimary)
+                Icon(imageVector = Icons.Filled.Person , contentDescription = "Perfil", tint = TextPrimary)
             }
         }
     }
