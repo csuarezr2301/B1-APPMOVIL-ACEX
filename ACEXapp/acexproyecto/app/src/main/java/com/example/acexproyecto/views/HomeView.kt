@@ -30,6 +30,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
 import com.example.acexproyecto.R
+import com.example.acexproyecto.model.Loading
 import com.example.acexproyecto.model.Usuario
 import com.example.acexproyecto.ui.theme.*  // Importa los colores personalizados
 import com.microsoft.identity.client.ISingleAccountPublicClientApplication
@@ -37,7 +38,10 @@ import com.microsoft.identity.client.exception.MsalException
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun HomeView(navController: NavController) {
+fun HomeView(navController: NavController, onLoadingComplete: () -> Unit) {
+    LaunchedEffect(Unit) {
+        onLoadingComplete()
+    }
     // Estructura principal con la barra inferior
     Scaffold(
         topBar = { TopBar(navController) }, // Barra superior con el logo
@@ -392,5 +396,5 @@ fun BottomDetailBar(navController: NavController) {
 fun PreviewHomeView() {
     // Crear un NavController simulado para el preview
     val navController = rememberNavController()
-    HomeView(navController = navController)
+    HomeView(navController = navController, { Loading.isLoading = false})
 }

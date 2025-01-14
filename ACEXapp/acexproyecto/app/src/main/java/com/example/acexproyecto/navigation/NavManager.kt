@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.acexproyecto.model.Loading
 import com.example.acexproyecto.views.ActivitiesView
 import com.example.acexproyecto.views.ActivityDetailView
 import com.example.acexproyecto.views.HomeView
@@ -33,7 +34,9 @@ fun NavManager(navController: NavHostController, isDarkMode: Boolean, onThemeCha
         // Pantalla principal (Home)
 
         composable("home") {
-            HomeView(navController)
+            HomeView(navController) {
+                Loading.isLoading = false
+            }
         }
 
         // Pantalla de localización (Mapa)

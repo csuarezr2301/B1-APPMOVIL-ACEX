@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import com.example.acexproyecto.model.Usuario
 import com.microsoft.graph.http.GraphServiceException
 import com.microsoft.graph.requests.GraphServiceClient
 import com.microsoft.identity.client.IAuthenticationResult
@@ -15,7 +16,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.CompletableFuture
 
-fun fetchUserProfile(context: Context, authenticationResult: IAuthenticationResult, callback: (String, String) -> Unit) {
+fun fetchUserProfile(context: Context, authenticationResult: IAuthenticationResult, callback: () -> Unit) {
     val accessToken = authenticationResult.accessToken
 
     CoroutineScope(Dispatchers.IO).launch {
@@ -45,13 +46,17 @@ fun fetchUserProfile(context: Context, authenticationResult: IAuthenticationResu
                 ""
             }
 
+
+            Usuario.photoPath = photoPath
+            Usuario.displayName = displayName
+
             withContext(Dispatchers.Main) {
-                callback(displayName, photoPath)
+                callback()
             }
         } catch (e: Exception) {
             Log.e("LoginDialogFragment", "Error fetching user profile", e)
             withContext(Dispatchers.Main) {
-                callback("Unknown", "")
+                callback()
             }
         }
     }

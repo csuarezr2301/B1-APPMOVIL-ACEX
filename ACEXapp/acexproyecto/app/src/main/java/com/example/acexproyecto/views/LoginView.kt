@@ -83,24 +83,20 @@ fun LoginView(navController: NavController) {
                     override fun onSuccess(authenticationResult: IAuthenticationResult) {
                         // Manejar el éxito de la autenticación
                         val accessToken = authenticationResult.accessToken
-                        //Log.d("LoginView", "Access Token: $accessToken")
-                        isLoading = false
-                        fetchUserProfile(context, authenticationResult) { name, path ->
-                            displayName = name
-                            photoPath = path
-                            account = authenticationResult.account.username
-                            isLoggedIn = true
+                        fetchUserProfile(context, authenticationResult) {
+                            Usuario.account = authenticationResult.account?.username ?: ""
+                            navController.navigate("home") {
+                                popUpTo("principal") { inclusive = true }
+                            }
                         }
                     }
 
                     override fun onError(exception: MsalException) {
-                        // Manejar el error de la autenticación
                         Log.e("LoginView", "Authentication error: ${exception.message}", exception)
                         isLoading = false
                     }
 
                     override fun onCancel() {
-                        // Manejar la cancelación de la autenticación
                         Log.d("LoginView", "Authentication canceled")
                         isLoading = false
                     }
@@ -111,17 +107,6 @@ fun LoginView(navController: NavController) {
             msalApp.acquireToken(parameters)
         } else {
             Log.e("LoginView", "MSAL app is not initialized")
-        }
-    }
-
-    LaunchedEffect(isLoggedIn) {
-        if (isLoggedIn) {
-            Usuario.displayName = displayName
-            Usuario.photoPath = photoPath
-            Usuario.account = account
-            navController.navigate("home") {
-                popUpTo("principal") { inclusive = true }
-            }
         }
     }
 
