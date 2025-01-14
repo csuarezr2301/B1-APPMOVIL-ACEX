@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.fragment.app.DialogFragment
 import com.example.acexproyecto.R
+import com.example.acexproyecto.model.Usuario
 import com.example.acexproyecto.views.MsalAppHolder
 import com.microsoft.graph.requests.GraphServiceClient
 import com.microsoft.identity.client.AcquireTokenParameters
@@ -41,8 +42,6 @@ class LoginDialogFragment(private val onSuccess: (IAuthenticationResult, String,
     private var isSuccessCalled = false
     private lateinit var listener: LoginDialogListener
     private var isLoading = mutableStateOf(false)
-    private var graphAccessToken: String? = null
-    private var apiAccessToken: String? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -80,8 +79,7 @@ class LoginDialogFragment(private val onSuccess: (IAuthenticationResult, String,
             .withPrompt(Prompt.SELECT_ACCOUNT)
             .withCallback(object : AuthenticationCallback {
                 override fun onSuccess(authenticationResult: IAuthenticationResult) {
-                    val accessToken = authenticationResult.accessToken
-                    Log.d("LoginDialogFragment", "Access Token: $accessToken")
+                    Usuario.msalToken = authenticationResult.accessToken
                     isLoading.value = false
                     if (!isSuccessCalled) {
                         isSuccessCalled = true
@@ -112,9 +110,7 @@ class LoginDialogFragment(private val onSuccess: (IAuthenticationResult, String,
             .withPrompt(Prompt.SELECT_ACCOUNT)
             .withCallback(object : AuthenticationCallback {
                 override fun onSuccess(authenticationResult: IAuthenticationResult) {
-                    val apiAccessToken = authenticationResult.accessToken
-                    Log.d("Authentication", "Custom API Authentication successful with token: $apiAccessToken")
-                    // Use the apiAccessToken to authenticate with your API
+                    Usuario.apiToken = authenticationResult.accessToken
                 }
 
                 override fun onError(exception: MsalException) {

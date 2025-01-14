@@ -67,10 +67,6 @@ fun LoginView(navController: NavController) {
     // Variables de estado para el nombre de usuario y la contraseña
     val context = LocalContext.current as ComponentActivity
     var isLoading by remember { mutableStateOf(false) }
-    var isLoggedIn by remember { mutableStateOf(false) }
-    var displayName by remember { mutableStateOf("") }
-    var photoPath by remember { mutableStateOf("") }
-    var account by remember { mutableStateOf("") }
 
     fun showLoginDialog() {
         val msalApp = MsalAppHolder.msalApp
