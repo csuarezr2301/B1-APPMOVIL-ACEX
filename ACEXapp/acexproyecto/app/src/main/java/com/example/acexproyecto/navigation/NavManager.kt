@@ -15,7 +15,8 @@ import com.example.acexproyecto.views.LoginView
 import com.example.acexproyecto.views.LocalizacionView
 import com.example.acexproyecto.views.SettingsView
 import com.example.acexproyecto.views.chatView
-
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 
 @Composable
@@ -30,8 +31,19 @@ fun NavManager(navController: NavHostController, isDarkMode: Boolean, onThemeCha
         }
 
         // Pantalla principal (Home)
-        composable("home") {
-            HomeView(navController)
+
+        composable(
+            "home/{displayName}/{photoPath}/{account}",
+            arguments = listOf(
+                navArgument("displayName") { type = NavType.StringType },
+                navArgument("photoPath") { type = NavType.StringType },
+                navArgument("account") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val displayName = URLDecoder.decode(backStackEntry.arguments?.getString("displayName") ?: "", StandardCharsets.UTF_8.toString())
+            val photoPath = URLDecoder.decode(backStackEntry.arguments?.getString("photoPath") ?: "", StandardCharsets.UTF_8.toString())
+            val account = URLDecoder.decode(backStackEntry.arguments?.getString("account") ?: "", StandardCharsets.UTF_8.toString())
+            HomeView(navController, displayName, photoPath, account)
         }
 
         // Pantalla de localización (Mapa)

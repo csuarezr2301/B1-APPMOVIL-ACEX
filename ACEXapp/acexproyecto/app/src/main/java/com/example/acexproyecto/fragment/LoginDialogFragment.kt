@@ -74,10 +74,6 @@ class LoginDialogFragment(private val onSuccess: (IAuthenticationResult, String,
                     if (!isSuccessCalled) {
                         isSuccessCalled = true
                         Log.d("LoginDialogFragment", "Authentication successful")
-                        fetchUserProfile(requireContext(), authenticationResult) { displayName, photoPath ->
-                            listener.onLoginSuccess(authenticationResult, displayName, photoPath)
-                            onSuccess(authenticationResult, displayName, photoPath)
-                        }
                         dismissAllowingStateLoss()
                     }
                 }
@@ -99,68 +95,7 @@ class LoginDialogFragment(private val onSuccess: (IAuthenticationResult, String,
         MsalAppHolder.msalApp?.acquireToken(parameters)
     }
 
-    @Composable
-    fun LoadingIndicator() {
-        if (isLoading.value) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            }
-        }
-    }
 
-    private fun fetchUserProfile(context: Context, authenticationResult: IAuthenticationResult, callback: (String, String) -> Unit) {
-        val accessToken = authenticationResult.accessToken
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val graphClient = GraphServiceClient
-                    .builder()
-                    .authenticationProvider { CompletableFuture.completedFuture(accessToken) }
-                    .buildClient()
-
-                val user = graphClient.me().buildRequest().get()
-                val displayName = user?.displayName ?: "Unknown"
-
-                val inputStream = try {
-                    graphClient.me().photo().content().buildRequest().get()
-                } catch (e: GraphServiceException) {
-                    val errorResponse = e.error as GraphErrorResponse
-                    if (errorResponse.error?.code == "ImageNotFound") {
-                        null
-                    } else {
-                        throw e
-                    }
-                }
-
-                val photoPath = if (inputStream != null) {
-                    saveImageToFile(context, inputStream.readBytes())
-                } else {
-                    ""
-                }
-
-                withContext(Dispatchers.Main) {
-                    callback(displayName, photoPath)
-                }
-            } catch (e: Exception) {
-                Log.e("LoginDialogFragment", "Error fetching user profile", e)
-                withContext(Dispatchers.Main) {
-                    callback("Unknown", "")
-                }
-            }
-        }
-    }
-
-    private fun saveImageToFile(context: Context, imageBytes: ByteArray): String {
-        val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-        val file = File(context.filesDir, "profile_image.jpg")
-        FileOutputStream(file).use { out ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
-        }
-        return file.absolutePath
-    }
 
 
     interface LoginDialogListener {

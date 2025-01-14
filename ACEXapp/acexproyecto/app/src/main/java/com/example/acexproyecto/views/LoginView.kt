@@ -30,6 +30,9 @@ import com.example.acexproyecto.ui.theme.ButtonPrimary
 import com.example.acexproyecto.ui.theme.Accent
 import com.microsoft.identity.client.ISingleAccountPublicClientApplication
 import android.app.Application
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +45,18 @@ import com.microsoft.identity.client.IPublicClientApplication
 import com.microsoft.identity.client.Prompt
 import com.microsoft.identity.client.PublicClientApplication
 import com.microsoft.identity.client.exception.MsalException
+import com.microsoft.graph.http.GraphErrorResponse
+import com.microsoft.graph.http.GraphServiceException
+import com.microsoft.graph.requests.GraphServiceClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import java.util.concurrent.CompletableFuture
 
 
 object MsalAppHolder {
@@ -75,7 +90,9 @@ fun LoginView(navController: NavController) {
     val context = LocalContext.current as ComponentActivity
     var isLoading by remember { mutableStateOf(false) }
     var isLoggedIn by remember { mutableStateOf(false) }
-
+    var displayName by remember { mutableStateOf("") }
+    var photoPath by remember { mutableStateOf("") }
+    var account by remember { mutableStateOf("") }
 
     fun showLoginDialog() {
         val msalApp = MsalAppHolder.msalApp
@@ -90,7 +107,12 @@ fun LoginView(navController: NavController) {
                         val accessToken = authenticationResult.accessToken
                         Log.d("LoginView", "Access Token: $accessToken")
                         isLoading = false
-                        isLoggedIn = true
+                        fetchUserProfile(context, authenticationResult) { name, path ->
+                            displayName = name
+                            photoPath = path
+                            account = authenticationResult.account.username
+                            isLoggedIn = true
+                        }
                     }
 
                     override fun onError(exception: MsalException) {
@@ -108,13 +130,18 @@ fun LoginView(navController: NavController) {
             isLoading = true
             msalApp.acquireToken(parameters)
         } else {
-
+            Log.e("LoginView", "MSAL app is not initialized")
         }
     }
 
-    LaunchedEffect(isLoading) {
-        if (!isLoading && isLoggedIn) {
-            navController.navigate("home")
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
+            val encodedDisplayName = URLEncoder.encode(displayName, StandardCharsets.UTF_8.toString())
+            val encodedPhotoPath = URLEncoder.encode(photoPath, StandardCharsets.UTF_8.toString())
+            val encondedAccount = URLEncoder.encode(account, StandardCharsets.UTF_8.toString())
+            navController.navigate("home/$encodedDisplayName/$encodedPhotoPath/$encondedAccount") {
+                popUpTo("principal") { inclusive = true }
+            }
         }
     }
 
@@ -268,4 +295,55 @@ fun LoginView(navController: NavController) {
 fun LoginScreenPreview() {
     val navController = rememberNavController()
     LoginView(navController = navController)
+}
+
+private fun fetchUserProfile(context: Context, authenticationResult: IAuthenticationResult, callback: (String, String) -> Unit) {
+    val accessToken = authenticationResult.accessToken
+
+    CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val graphClient = GraphServiceClient
+                .builder()
+                .authenticationProvider { CompletableFuture.completedFuture(accessToken) }
+                .buildClient()
+
+            val user = graphClient.me().buildRequest().get()
+            val displayName = user?.displayName ?: "Unknown"
+
+            val inputStream = try {
+                graphClient.me().photo().content().buildRequest().get()
+            } catch (e: GraphServiceException) {
+                val errorResponse = e.error as GraphErrorResponse
+                if (errorResponse.error?.code == "ImageNotFound") {
+                    null
+                } else {
+                    throw e
+                }
+            }
+
+            val photoPath = if (inputStream != null) {
+                saveImageToFile(context, inputStream.readBytes())
+            } else {
+                ""
+            }
+
+            withContext(Dispatchers.Main) {
+                callback(displayName, photoPath)
+            }
+        } catch (e: Exception) {
+            Log.e("LoginDialogFragment", "Error fetching user profile", e)
+            withContext(Dispatchers.Main) {
+                callback("Unknown", "")
+            }
+        }
+    }
+}
+
+private fun saveImageToFile(context: Context, imageBytes: ByteArray): String {
+    val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+    val file = File(context.filesDir, "profile_image.jpg")
+    FileOutputStream(file).use { out ->
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+    }
+    return file.absolutePath
 }

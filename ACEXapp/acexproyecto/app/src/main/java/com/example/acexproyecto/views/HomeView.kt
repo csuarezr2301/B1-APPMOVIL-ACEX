@@ -1,7 +1,9 @@
 package com.example.acexproyecto.views
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,18 +28,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.rememberImagePainter
 import com.example.acexproyecto.R
 import com.example.acexproyecto.ui.theme.*  // Importa los colores personalizados
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun HomeView(navController: NavController) {
+fun HomeView(navController: NavController, displayName: String, photoPath: String, account: String) {
     // Estructura principal con la barra inferior
     Scaffold(
         topBar = { TopBar() }, // Barra superior con el logo
 
         content = {
-            ContentDetailView(navController) // Contenido principal
+            Log.e("HomeView", "displayName: $displayName, photoPath: $photoPath, account: $account")
+            ContentDetailView(navController, displayName, photoPath, account) // Contenido principal
         },
         bottomBar = { BottomDetailBar(navController) }, // Barra inferior
     )
@@ -67,7 +71,7 @@ fun TopBar() {
 }
 
 @Composable
-fun ContentDetailView(navController: NavController) {
+fun ContentDetailView(navController: NavController, displayName: String, photoPath: String, account: String) {
     var showDialog by remember { mutableStateOf(false) } // Variable para mostrar el pop-up de preguntas frecuentes
 
     LazyColumn(
@@ -77,7 +81,8 @@ fun ContentDetailView(navController: NavController) {
     ) {
         item {
             // Información del usuario
-            UserInformation()
+            Log.e("HomeView", "displayName: $displayName, photoPath: $photoPath")
+            UserInformation(displayName, photoPath, account)
         }
         item {
             // Espacio para el calendario
@@ -158,7 +163,7 @@ fun FAQDialog(onDismiss: () -> Unit) {
 
 
 @Composable
-fun UserInformation() {
+fun UserInformation(displayName: String, photoPath: String, account: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -166,25 +171,42 @@ fun UserInformation() {
         contentAlignment = Alignment.CenterStart
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
+            Log.e("HomeView", "displayName: $displayName, photoPath: $photoPath")
             // Row para la foto, nombre y email
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(30.dp)
             ) {
                 // Ícono de perfil más grande
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Icono de perfil",
-                    modifier = Modifier
-                        .size(60.dp) // Tamaño más grande para el ícono
-                        .clip(CircleShape)
-                        .border(2.dp, TextPrimary, CircleShape) // Borde con TextPrimary
-                )
+                if (photoPath.isNullOrEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .size(30.dp)
+                            .clip(CircleShape)
+                            .background(Color.Gray),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = getInitials(displayName),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.White
+                        )
+                    }
+                } else {
+                    Image(
+                        painter = rememberImagePainter(data = photoPath),
+                        contentDescription = "Profile Image",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Nombre de Usuario", fontSize = 20.sp, color = TextPrimary) // Color de texto
-                    Text("email@ejemplo.com", fontSize = 16.sp, color = TextPrimary) // Color de texto
+                    Text(displayName, fontSize = 20.sp, color = TextPrimary) // Color de texto
+                    Text(account, fontSize = 16.sp, color = TextPrimary) // Color de texto
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -193,6 +215,10 @@ fun UserInformation() {
             }
         }
     }
+}
+
+fun getInitials(name: String?): String {
+    return name?.split(" ")?.mapNotNull { it.firstOrNull()?.toString() }?.take(2)?.joinToString("")?.uppercase() ?: "?"
 }
 /*
 @Composable
@@ -345,5 +371,5 @@ fun BottomDetailBar(navController: NavController) {
 fun PreviewHomeView() {
     // Crear un NavController simulado para el preview
     val navController = rememberNavController()
-    HomeView(navController = navController)
+    HomeView(navController = navController, displayName = "Usuario de Prueba", photoPath = "", account = "")
 }
