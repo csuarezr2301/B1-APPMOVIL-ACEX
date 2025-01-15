@@ -176,7 +176,7 @@ fun AllActividades(navController: NavController) {
                             navController.navigate("detalle_actividad_screen")
                         },
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = ButtonPrimary) // Card color
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant) // Card color
                 ) {
                     Column(
                         modifier = Modifier
@@ -269,7 +269,7 @@ fun OtrasActividades(navController: NavController) {
                                 navController.navigate("detalle_actividad_screen")
                             },
                         shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = ButtonPrimary) // Card color
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant) // Card color
                     ) {
                         Column(
                             modifier = Modifier
