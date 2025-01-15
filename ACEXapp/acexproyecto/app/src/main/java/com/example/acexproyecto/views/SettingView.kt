@@ -19,11 +19,14 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberImagePainter
 import com.example.acexproyecto.R
+import com.example.acexproyecto.objetos.Usuario
 import com.example.acexproyecto.ui.theme.* // Asegúrate de importar tus colores
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -65,8 +68,7 @@ fun SettingsViewapp(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(10.dp)
-            .padding(top = paddingValues.calculateTopPadding())
+            .padding(12.dp)
             //.padding(bottom = paddingValues.calculateBottomPadding())
     ) {
         Text(
@@ -98,16 +100,6 @@ fun SettingsViewapp(
             }
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Opción para cerrar sesión
-        Button(
-            onClick = { showDialog = true }, // Muestra el diálogo de confirmación
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = ButtonPrimary) // Usar ButtonPrimary
-        ) {
-            Text("Cerrar sesión", color = Color.White) // Texto blanco en los botones
-        }
     }
 
     // Mostrar el diálogo de confirmación si showDialog es verdadero
@@ -174,7 +166,7 @@ fun UserInfo() {
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = TextPrimary, // Usar color de texto primario
-            fontSize = 28.sp, // Aumentar el tamaño de la fuente
+            fontSize = 22.sp, // Aumentar el tamaño de la fuente
             modifier = Modifier
                 .fillMaxWidth() // Asegura que el modificador ocupe todo el ancho disponible
                 .padding(bottom = 20.dp)
@@ -189,14 +181,30 @@ fun UserInfo() {
                 .clip(CircleShape)
                 .align(Alignment.CenterHorizontally)
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.microsoft),
-                contentDescription = "Perfil",
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .background(Accent) // Fondo con color Accent
-            )
+            if (Usuario.photoPath.isNullOrEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .background(Color.Gray),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = getInitials(Usuario.displayName),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White
+                    )
+                }
+            } else {
+                Image(
+                    painter = rememberImagePainter(data = Usuario.photoPath),
+                    contentDescription = "Profile Image",
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            }
         }
 
         // Información básica (Nombre, Correo)
@@ -206,13 +214,13 @@ fun UserInfo() {
                 .align(Alignment.CenterHorizontally)
         ) {
             Text(
-                text = "Juan Pérez", // Nombre del usuario
+                text = Usuario.displayName, // Nombre del usuario
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary // Usar color de texto primario
             )
             Text(
-                text = "juan.perez@email.com", // Correo del usuario
+                text = Usuario.account, // Correo del usuario
                 fontSize = 16.sp,
                 color = TextPrimary // Usar color de texto primario
             )
@@ -226,8 +234,6 @@ fun UserDetails() {
         // Información detallada (Contraseña, Rol, Activo, Departamento)
 
         UserDetailField(label = "Rol", value = "Administrador")
-        Spacer(modifier = Modifier.height(10.dp))
-        UserDetailField(label = "Activo", value = "Sí")
         Spacer(modifier = Modifier.height(10.dp))
         UserDetailField(label = "Departamento", value = "Informática")
     }

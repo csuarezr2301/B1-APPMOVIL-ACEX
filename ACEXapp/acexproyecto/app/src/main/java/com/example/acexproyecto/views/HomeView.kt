@@ -105,7 +105,7 @@ fun TopBar(navController: NavController) {
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = TopAppBarBackground
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
     )
     // Mostrar el diálogo con las preguntas frecuentes

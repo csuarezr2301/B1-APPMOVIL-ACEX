@@ -20,7 +20,8 @@ private val DarkColorScheme = darkColorScheme(
     background = Color(0xFF121212), // Fondo oscuro
     onBackground = Color.White, // Texto sobre el fondo oscuro
     surface = Color(0xFF1E1E1E), // Fondo de superficies oscuras
-    onSurface = Color.White // Texto sobre superficies oscuras
+    onSurface = Color.White, // Texto sobre superficies oscuras
+    surfaceVariant = Color(0xFF57626B)
 )
 
 // Esquema de color para el modo claro
@@ -32,7 +33,8 @@ private val LightColorScheme = lightColorScheme(
     background = Background,  // Fondo general
     onBackground = TextPrimary, // Texto principal sobre el fondo claro
     surface = Color.White,    // Fondo blanco para superficies
-    onSurface = TextPrimary   // Texto sobre superficies claras
+    onSurface = TextPrimary,   // Texto sobre superficies claras
+    surfaceVariant = TopAppBarBackground
 )
 
 @Composable

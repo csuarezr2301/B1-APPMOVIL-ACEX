@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
+import com.example.acexproyecto.ui.theme.TopAppBarBackground
 import com.microsoft.graph.models.Event
 import com.microsoft.graph.requests.GraphServiceClient
 import kotlinx.coroutines.Dispatchers
@@ -129,7 +130,7 @@ fun CalendarView(currentMonth: YearMonth, events: List<Event>, onMonthChange: (Y
                             }
                             val isToday = date == today
                             val isPast = date.isBefore(today)
-                            val backgroundColor = if (day % 2 == 0) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f)
+                            val backgroundColor = if (day % 2 == 0) TopAppBarBackground else MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f)
                             Box(
                                 modifier = Modifier
                                     .weight(1f)

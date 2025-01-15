@@ -5,8 +5,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.acexproyecto.objetos.Loading
+import com.example.acexproyecto.views.ActividadesListView
 import com.example.acexproyecto.views.ActivitiesView
 import com.example.acexproyecto.views.ActivityDetailView
+import com.example.acexproyecto.views.ChatView
 import com.example.acexproyecto.views.HomeView
 import com.example.acexproyecto.views.LoginView
 import com.example.acexproyecto.views.LocalizacionView
@@ -50,12 +52,21 @@ fun NavManager(navController: NavHostController, isDarkMode: Boolean, onThemeCha
 
         // Pantalla de chat
         composable("chat") {
-            chatView(navController)
+            //chatView(navController)
+            ActividadesListView(navController)
         }
 
         // Pantalla de actividad detalles
         composable("detalle_actividad_screen") {
             ActivityDetailView(navController)
+        }
+
+        composable("chat/{activityId}") { backStackEntry ->
+            val activityId = backStackEntry.arguments?.getString("activityId") ?: return@composable
+            ChatView(
+                navController = navController,
+                activityId = activityId
+            )
         }
     }
 }
