@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,8 +33,12 @@ import com.example.acexproyecto.R
 import com.example.acexproyecto.objetos.Loading
 import com.example.acexproyecto.objetos.Usuario
 import com.example.acexproyecto.ui.theme.*  // Importa los colores personalizados
+import com.example.appacex.model.ActividadResponse
+import com.example.appacex.model.RetrofitClient
 import com.microsoft.identity.client.ISingleAccountPublicClientApplication
 import com.microsoft.identity.client.exception.MsalException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -116,43 +122,74 @@ fun TopBar(navController: NavController) {
 
 @Composable
 fun ContentDetailView(navController: NavController) {
+    val activities = remember { mutableStateListOf<ActividadResponse>() }
+    val isLoading = remember { mutableStateOf(true) }
+    val errorMessage = remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.instance.getActividades().execute()
+                if (response.isSuccessful) {
+                    val approvedActivities = response.body()?.filter { it.estado == "APROBADA" } ?: emptyList()
+                    activities.addAll(approvedActivities)
+                } else {
+                    errorMessage.value = "Error: ${response.code()}"
+                }
+            } catch (e: Exception) {
+                errorMessage.value = "Exception: ${e.message}"
+            } finally {
+                withContext(Dispatchers.Main) {
+                    isLoading.value = false
+                }
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(bottom = 12.dp) // Ajusta el padding para que no se superponga con el BottomAppBar
+            .padding(bottom = 12.dp) // Adjust padding to avoid overlap with BottomAppBar
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(15.dp)
-        ) {
-            item {
-                // Información del usuario
-                UserInformation()
+        if (isLoading.value) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
             }
-            item {
-                // Espacio para el calendario
-                CalendarView()
+        } else if (errorMessage.value != null) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = errorMessage.value ?: "Unknown error", color = Color.Red)
             }
-            item {
-                // Espacio entre el calendario y las actividades
-                Spacer(modifier = Modifier.height(15.dp))
+        } else {
+            LazyColumn {
+                item {
+                    // Información del usuario
+                    UserInformation()
+                }
+                item {
+                    // Espacio para el calendario
+                    CalendarView()
+                }
             }
-        }
-
-        // LazyRow con cartas de actividades alineado en la parte inferior
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(8.dp)
-        ) {
-            items(5) { index ->
-                ActivityCardItem(activityName = "Actividad $index", activityDate = "01-02-2025", index = index, navController)
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .padding(8.dp)
+            ) {
+                items(activities.size) { index ->
+                    val actividad = activities[index]
+                    ActivityCardItem(
+                        activityName = actividad.titulo,
+                        activityDate = actividad.fini,
+                        index = actividad.id,
+                        navController = navController
+                    )
+                }
             }
         }
     }
 }
+
 @Composable
 fun FAQSection(onClick: () -> Unit) {
     // Este es el ítem de Preguntas Frecuentes en el contenido principal
@@ -206,7 +243,8 @@ fun FAQDialog(onDismiss: () -> Unit) {
 fun UserInformation() {
     Box(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(top = 10.dp),
         contentAlignment = Alignment.CenterStart
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -317,6 +355,7 @@ fun ActivityCardItem(activityName: String, activityDate: String, index: Int, nav
         modifier = Modifier
             .padding(8.dp)
             .width(150.dp)
+            .height(110.dp)
             .clickable {
                 // Navegar a otra pantalla con la información de la actividad
                 navController.navigate("detalle_actividad_screen")
@@ -331,7 +370,7 @@ fun ActivityCardItem(activityName: String, activityDate: String, index: Int, nav
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Título de la actividad
-            Text(activityName, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(activityName, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis,)
 
             // Fecha y hora
             Text(activityDate, color = TextPrimary, fontSize = 14.sp)
