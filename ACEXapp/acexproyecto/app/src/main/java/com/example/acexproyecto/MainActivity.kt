@@ -4,8 +4,6 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -14,7 +12,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.acexproyecto.navigation.NavManager
 import com.example.acexproyecto.ui.theme.acexproyecto_BaseTheme
 import com.example.acexproyecto.views.MsalAppHolder
-import com.example.acexproyecto.views.checkFirebaseConnection
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -65,7 +62,3 @@ class MainActivity : ComponentActivity() {
             }
     }
 }
-
-
-
-

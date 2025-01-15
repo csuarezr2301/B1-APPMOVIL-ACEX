@@ -20,12 +20,10 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
-import com.example.acexproyecto.R
 import com.example.acexproyecto.objetos.Usuario
 import com.example.acexproyecto.ui.theme.* // Asegúrate de importar tus colores
 
@@ -46,7 +44,7 @@ fun SettingsView(navController: NavController, isDarkMode: Boolean, onThemeChang
                     Spacer(modifier = Modifier.height(24.dp))
                     UserDetails()
                     Spacer(modifier = Modifier.height(5.dp))
-                    SettingsViewapp(navController, isDarkMode, onThemeChanged, paddingValues)
+                    SettingsViewapp(navController, isDarkMode, onThemeChanged)
                 }
             }
         },
@@ -58,8 +56,7 @@ fun SettingsView(navController: NavController, isDarkMode: Boolean, onThemeChang
 fun SettingsViewapp(
     navController: NavController,
     isDarkMode: Boolean,
-    onThemeChanged: (Boolean) -> Unit,
-    paddingValues: PaddingValues
+    onThemeChanged: (Boolean) -> Unit
 ) {
     // Variables para las opciones de ajustes
     val notificationsState = remember { mutableStateOf(true) }  // Notificaciones
@@ -69,7 +66,6 @@ fun SettingsViewapp(
         modifier = Modifier
             .fillMaxSize()
             .padding(12.dp)
-            //.padding(bottom = paddingValues.calculateBottomPadding())
     ) {
         Text(
             text = "Ajustes",
@@ -157,7 +153,6 @@ fun SettingsOption(
     }
 }
 
-
 @Composable
 fun UserInfo() {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -172,7 +167,6 @@ fun UserInfo() {
                 .padding(bottom = 20.dp)
                 .wrapContentWidth(Alignment.CenterHorizontally) // Centra el texto horizontalmente
         )
-
 
         // Imagen de perfil
         Box(

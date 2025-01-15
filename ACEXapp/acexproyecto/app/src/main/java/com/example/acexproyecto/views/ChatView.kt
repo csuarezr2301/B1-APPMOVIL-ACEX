@@ -2,7 +2,6 @@ package com.example.acexproyecto.views
 
 import android.annotation.SuppressLint
 import android.util.Log
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,8 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -27,18 +24,14 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.acexproyecto.R
 import com.example.acexproyecto.objetos.Usuario
-import com.example.acexproyecto.ui.theme.TopAppBarBackground
 import com.example.appacex.model.ActividadResponse
 import com.example.appacex.model.RetrofitClient
-import com.microsoft.identity.client.IAccount
-import com.microsoft.identity.client.IAuthenticationResult
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
-
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -61,7 +54,6 @@ fun ChatView(
     activityId: String,
 ) {
     var showProfessorDialog by remember { mutableStateOf(false) }
-    var showLogoutDialog by remember { mutableStateOf(false) }
     var activity by remember { mutableStateOf<ActividadResponse?>(null) }
 
     LaunchedEffect(activityId) {
@@ -118,13 +110,11 @@ fun ChatView(
                         }
                     }
                 }
-                ChatScreen(activityId, navController, Usuario.displayName)
+                ChatScreen(activityId, Usuario.displayName)
             }
         },
         bottomBar = { BottomDetailBar(navController) }, // Barra inferior
     )
-
-
 
     if (showProfessorDialog) {
         AlertDialog(
@@ -147,7 +137,7 @@ fun ChatView(
 }
 
 @Composable
-fun ChatScreen(activityId: String, navController: NavController, displayName: String?) {
+fun ChatScreen(activityId: String, displayName: String?) {
     val messages = remember { mutableStateListOf<Message>() }
     val listState = rememberLazyListState()
     var message by remember { mutableStateOf("") }
@@ -313,7 +303,6 @@ data class Message(
     val content: String = "",
     val timestamp: Long = 0L
 )
-
 
 @Preview(showBackground = true)
 @Composable

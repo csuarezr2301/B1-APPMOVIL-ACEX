@@ -14,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -114,6 +113,7 @@ fun TopBar(navController: NavController) {
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
     )
+
     // Mostrar el diálogo con las preguntas frecuentes
     if (showDialog) {
         FAQDialog(onDismiss = { showDialog = false })
@@ -190,27 +190,6 @@ fun ContentDetailView(navController: NavController) {
     }
 }
 
-@Composable
-fun FAQSection(onClick: () -> Unit) {
-    // Este es el ítem de Preguntas Frecuentes en el contenido principal
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Preguntas Frecuentes", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-        Text(
-            "Accede a las preguntas",
-            fontSize = 16.sp,
-            color = TextPrimary.copy(alpha = 0.6f), // Color más suave
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .clickable { onClick() } // Abre el popup al hacer clic
-        )
-    }
-}
-
 // Composable que muestra las preguntas frecuentes en un diálogo emergente
 @Composable
 fun FAQDialog(onDismiss: () -> Unit) {
@@ -237,7 +216,6 @@ fun FAQDialog(onDismiss: () -> Unit) {
         }
     )
 }
-
 
 @Composable
 fun UserInformation() {
@@ -293,33 +271,6 @@ fun UserInformation() {
 fun getInitials(name: String?): String {
     return name?.split(" ")?.mapNotNull { it.firstOrNull()?.toString() }?.take(2)?.joinToString("")?.uppercase() ?: "?"
 }
-/*
-@Composable
-fun FAQPopupButton() {
-    var showDialog by remember { mutableStateOf(false) }
-
-
-    //Botón para abrir el popup
-    IconButton(onClick = { showDialog = true }) {
-        Icon(imageVector = Icons.Default.Search, contentDescription = "Preguntas Frecuentes", tint = ButtonPrimary) // Color del ícono
-    }
-
-
-    // Popup con las preguntas frecuentes
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("Preguntas Frecuentes", color = TextPrimary) }, // Título en color de texto primario
-            text = { Text("Aquí irían las preguntas frecuentes.", color = TextPrimary) }, // Texto en color de texto primario
-            confirmButton = {
-                Button(onClick = { showDialog = false }) {
-                    Text("Cerrar", color = Color.White)
-                }
-            }
-        )
-    }
-}
-*/
 
 @Composable
 fun CalendarView() {
@@ -341,12 +292,9 @@ fun CalendarView() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Log.e("Calendario", Usuario.msalToken)
-            Log.e("Calendario", Usuario.calendarId)
             Calendario(Usuario.msalToken, Usuario.calendarId)
 
         }
-
 }
 
 @Composable

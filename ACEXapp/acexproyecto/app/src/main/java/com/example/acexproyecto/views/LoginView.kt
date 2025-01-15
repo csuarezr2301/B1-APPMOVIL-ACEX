@@ -67,7 +67,6 @@ object MsalAppHolder {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginView(navController: NavController) {
     // Variables de estado para el nombre de usuario y la contraseña
@@ -221,7 +220,6 @@ suspend fun fetchCalendarId(accessToken: String, calendarName: String): String? 
         return null
     }
 
-    Log.d("fetchCalendarId", "Starting fetch with token: $accessToken")
     return try {
         withContext(Dispatchers.IO) {
             val graphClient = GraphServiceClient
@@ -230,11 +228,9 @@ suspend fun fetchCalendarId(accessToken: String, calendarName: String): String? 
                 .buildClient()
 
             val calendars = graphClient.me().calendars().buildRequest()?.get()?.currentPage
-            Log.d("fetchCalendarId", "Calendars: $calendars")
 
             val calendar = calendars?.find { it.name == calendarName }
             if (calendar != null) {
-                Log.d("fetchCalendarId", "Found calendar: ${calendar.name} with ID: ${calendar.id}")
                 calendar.id
             } else {
                 Log.e("fetchCalendarId", "Calendar with name $calendarName not found")
@@ -250,11 +246,9 @@ suspend fun fetchCalendarId(accessToken: String, calendarName: String): String? 
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {
     val navController = rememberNavController()
     LoginView(navController = navController)
 }
-
