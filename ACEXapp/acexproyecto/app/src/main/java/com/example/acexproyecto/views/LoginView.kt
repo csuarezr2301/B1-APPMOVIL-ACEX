@@ -26,7 +26,9 @@ import com.microsoft.identity.client.ISingleAccountPublicClientApplication
 import android.app.Application
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import com.example.acexproyecto.objetos.Loading
 import com.microsoft.identity.client.AcquireTokenParameters
 import com.microsoft.identity.client.AuthenticationCallback
 import com.microsoft.identity.client.IAuthenticationResult
@@ -35,6 +37,7 @@ import com.microsoft.identity.client.Prompt
 import com.microsoft.identity.client.PublicClientApplication
 import com.microsoft.identity.client.exception.MsalException
 import com.example.acexproyecto.objetos.Usuario
+import com.example.acexproyecto.utils.checkProfessorEmail
 import com.example.acexproyecto.utils.fetchUserProfile
 import com.microsoft.graph.http.GraphServiceException
 import com.microsoft.graph.requests.GraphServiceClient
@@ -72,7 +75,8 @@ fun LoginView(navController: NavController) {
     // Variables de estado para el nombre de usuario y la contraseña
     val context = LocalContext.current as ComponentActivity
     var isLoading by remember { mutableStateOf(false) }
-
+    var showDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     fun showLoginDialog() {
         val graphScopes = listOf(
@@ -99,11 +103,24 @@ fun LoginView(navController: NavController) {
                             if (calendarId != null) {
                                 Usuario.calendarId = calendarId
                             }
-                        }
-                        fetchUserProfile(context, authenticationResult) {
-                            Usuario.account = authenticationResult.account?.username ?: ""
-                            navController.navigate("home") {
-                                popUpTo("principal") { inclusive = true }
+                            checkProfessorEmail(
+                                authenticationResult.account?.username ?: ""
+                            ) { isProfessor ->
+                                if (!isProfessor) {
+                                    //Log.d("LoginView", "Usuario no es profesor")
+                                    //navController.navigate("principal") {
+                                    //    popUpTo("home") { inclusive = true }
+                                    //}
+                                    showDialog = true
+                                } else {
+                                    fetchUserProfile(context, authenticationResult) {
+                                        Usuario.account =
+                                            authenticationResult.account?.username ?: ""
+                                        navController.navigate("home") {
+                                            popUpTo("principal") { inclusive = true }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -148,6 +165,31 @@ fun LoginView(navController: NavController) {
         } else {
             Log.e("LoginView", "MSAL app is not initialized")
         }
+    }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(text = "Permiso denegado") },
+            text = { Text(text = "Lo sentimos, no tienes permisos para entrar a esta aplicación.") },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false
+                    MsalAppHolder.msalApp?.signOut(object : ISingleAccountPublicClientApplication.SignOutCallback {
+                        override fun onSignOut() {
+                            // Navigate back to the login screen
+                            navController.navigate("principal")
+                            Loading.isLoading = false
+                        }
+
+                        override fun onError(exception: MsalException) {
+                            Log.e("TopBar", "Error during sign out", exception)
+                        }
+                    })
+                }) {
+                    Text(text = "Cancelar")
+                }
+            }
+        )
     }
 
     Box(

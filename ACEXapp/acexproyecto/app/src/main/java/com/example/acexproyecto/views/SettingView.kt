@@ -73,7 +73,8 @@ fun SettingsViewapp(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            color = TextPrimary
         )
 
         // Opción de notificaciones
@@ -147,7 +148,8 @@ fun SettingsOption(
                 checkedThumbColor = Accent, // Usar el color Accent para el "thumb" del switch
                 uncheckedThumbColor = Color.Gray,
                 checkedTrackColor = Accent.copy(alpha = 0.3f), // Track más suave para el estado activado
-                uncheckedTrackColor = Color.Gray
+                uncheckedTrackColor = Color.LightGray,
+                uncheckedBorderColor = Color.Transparent
             )
         )
     }
@@ -227,9 +229,9 @@ fun UserDetails() {
     Column(modifier = Modifier.fillMaxWidth()) {
         // Información detallada (Contraseña, Rol, Activo, Departamento)
 
-        UserDetailField(label = "Rol", value = "Administrador")
+        UserDetailField(label = "Rol", value = getRoleDisplayName(Usuario.rol))
         Spacer(modifier = Modifier.height(10.dp))
-        UserDetailField(label = "Departamento", value = "Informática")
+        UserDetailField(label = "Departamento", value = Usuario.departamento?.nombre ?: "Sin Departamento")
     }
 }
 
@@ -249,6 +251,15 @@ fun UserDetailField(label: String, value: String) {
             modifier = Modifier.fillMaxWidth(),
             color = TextPrimary // Usar color de texto primario
         )
+    }
+}
+
+fun getRoleDisplayName(role: String): String {
+    return when (role) {
+        "PROF" -> "Profesor"
+        "ED" -> "Equipo Directivo"
+        "ADM" -> "Admin"
+        else -> "Desconocido"
     }
 }
 

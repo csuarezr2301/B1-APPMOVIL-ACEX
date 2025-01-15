@@ -40,6 +40,8 @@ import com.example.appacex.model.ActividadResponse
 import com.example.appacex.model.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextFieldDefaults
 
 // Define color palette for the app
 val PrimaryColor = Color(0xFF79B3BB)   // Primary color (light blue)

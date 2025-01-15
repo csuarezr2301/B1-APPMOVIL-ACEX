@@ -3,8 +3,11 @@ package com.example.acexproyecto.utils
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.http.HttpException
 import android.util.Log
 import com.example.acexproyecto.objetos.Usuario
+import com.example.appacex.model.ProfesorResponse
+import com.example.appacex.model.RetrofitClient
 import com.microsoft.graph.http.GraphServiceException
 import com.microsoft.graph.requests.GraphServiceClient
 import com.microsoft.identity.client.IAuthenticationResult
@@ -46,7 +49,6 @@ fun fetchUserProfile(context: Context, authenticationResult: IAuthenticationResu
                 ""
             }
 
-
             Usuario.photoPath = photoPath
             Usuario.displayName = displayName
 
@@ -58,6 +60,35 @@ fun fetchUserProfile(context: Context, authenticationResult: IAuthenticationResu
             withContext(Dispatchers.Main) {
                 callback()
             }
+        }
+    }
+}
+
+suspend fun checkProfessorEmail(email: String, callback: (Boolean) -> Unit) {
+    withContext(Dispatchers.IO) {
+        try {
+            val response = RetrofitClient.instance.getProfesores().execute()
+            if (response.isSuccessful) {
+                val profesores = response.body()
+                val profesor : ProfesorResponse? = profesores?.find {
+                    it.correo.equals(email, ignoreCase = true) && it.activo == 1
+                }
+                val isProfessor = profesor != null
+                if (isProfessor) {
+                    Usuario.rol = profesor?.rol ?: ""
+                    Usuario.departamento = profesor?.depart
+                }
+                callback(isProfessor)
+            } else {
+                Log.e("API", "Error en la respuesta de la API: ${response.code()}")
+                callback(false)
+            }
+        } catch (e: HttpException) {
+            Log.e("API", "Error en la solicitud a la API", e)
+            callback(false)
+        } catch (e: Exception) {
+            Log.e("API", "Error desconocido", e)
+            callback(false)
         }
     }
 }

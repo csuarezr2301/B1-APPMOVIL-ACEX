@@ -1,6 +1,9 @@
 package com.example.acexproyecto.navigation
 
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,7 +16,6 @@ import com.example.acexproyecto.views.HomeView
 import com.example.acexproyecto.views.LoginView
 import com.example.acexproyecto.views.LocalizacionView
 import com.example.acexproyecto.views.SettingsView
-import com.example.acexproyecto.views.chatView
 
 
 @Composable

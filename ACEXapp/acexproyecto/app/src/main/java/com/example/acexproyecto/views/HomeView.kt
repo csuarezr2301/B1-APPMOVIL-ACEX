@@ -17,7 +17,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,18 +51,20 @@ fun HomeView(navController: NavController, onLoadingComplete: () -> Unit) {
         onLoadingComplete()
     }
     // Estructura principal con la barra inferior
-    Scaffold(
-        topBar = { TopBar(navController) }, // Barra superior con el logo
+        Scaffold(
+            topBar = { TopBar(navController) }, // Barra superior con el logo
 
-        content = { paddingValues ->
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)) {
-                ContentDetailView(navController) // Contenido principal
-            }
-        },
-        bottomBar = { BottomDetailBar(navController) }, // Barra inferior
-    )
+            content = { paddingValues ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                ) {
+                    ContentDetailView(navController) // Contenido principal
+                }
+            },
+            bottomBar = { BottomDetailBar(navController) }, // Barra inferior
+        )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -131,7 +138,7 @@ fun ContentDetailView(navController: NavController) {
             try {
                 val response = RetrofitClient.instance.getActividades().execute()
                 if (response.isSuccessful) {
-                    val approvedActivities = response.body()?.filter { it.estado == "APROBADA" } ?: emptyList()
+                    val approvedActivities = response.body() ?: emptyList()
                     activities.addAll(approvedActivities)
                 } else {
                     errorMessage.value = "Error: ${response.code()}"
@@ -181,6 +188,7 @@ fun ContentDetailView(navController: NavController) {
                     ActivityCardItem(
                         activityName = actividad.titulo,
                         activityDate = actividad.fini,
+                        activityStatus = actividad.estado,
                         index = actividad.id,
                         navController = navController
                     )
@@ -298,7 +306,14 @@ fun CalendarView() {
 }
 
 @Composable
-fun ActivityCardItem(activityName: String, activityDate: String, index: Int, navController: NavController) {
+fun ActivityCardItem(activityName: String, activityDate: String, activityStatus: String, index: Int, navController: NavController) {
+    val iconColor = when (activityStatus) {
+        "APROBADA" -> Color(0xFF69A269) // Verde
+        "REALIZADA" -> Color(0xFFC8CC4A) // Azul
+        "CANCELADA" -> Color(0xFFA86767) // Rojo
+        else -> Color.Gray
+    }
+
     Card(
         modifier = Modifier
             .padding(8.dp)
@@ -327,7 +342,7 @@ fun ActivityCardItem(activityName: String, activityDate: String, index: Int, nav
             Icon(
                 imageVector = Icons.Filled.Star,
                 contentDescription = "Evento",
-                tint = TextPrimary,
+                tint = iconColor,
                 modifier = Modifier.size(30.dp)
             )
         }
@@ -340,44 +355,46 @@ fun BottomDetailBar(navController: NavController) {
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(0.dp),
     ) {
+        val currentRoute = navController.currentBackStackEntry?.destination?.route
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             // Íconos de la barra inferior
             IconButton(
-                onClick = { navController.navigate("maps") },
+                onClick = { if (currentRoute != "maps") navController.navigate("maps") },
                 modifier = Modifier.size(65.dp)
             ) {
-                Icon(imageVector = Icons.Filled.LocationOn, contentDescription = "Maps", tint = TextPrimary)
+                Icon(imageVector = Icons.Filled.LocationOn, contentDescription = "Maps", tint = TextPrimary, modifier = Modifier.shadow(elevation = if (currentRoute == "maps") 68.dp else 0.dp, spotColor = MaterialTheme.colorScheme.primary))
             }
 
             IconButton(
-                onClick = { navController.navigate("activities") },
+                onClick = { if (currentRoute != "activities") navController.navigate("activities") },
                 modifier = Modifier.size(65.dp)
             ) {
-                Icon(imageVector = Icons.Filled.Star, contentDescription = "Activities", tint = TextPrimary)
+                Icon(imageVector = Icons.Filled.Star, contentDescription = "Activities", tint = TextPrimary, modifier = Modifier.shadow(if (currentRoute == "activities") 68.dp else 0.dp, spotColor = MaterialTheme.colorScheme.primary))
             }
 
             IconButton(
-                onClick = { navController.navigate("home") },
+                onClick = { if (currentRoute != "home") navController.navigate("home") },
                 modifier = Modifier.size(65.dp)
             ) {
-                Icon(imageVector = Icons.Filled.Home, contentDescription = "Home", tint = TextPrimary)
+                Icon(imageVector = Icons.Filled.Home, contentDescription = "Home", tint = TextPrimary, modifier = Modifier.shadow(if (currentRoute == "home") 68.dp else 0.dp, spotColor = MaterialTheme.colorScheme.primary))
             }
 
             IconButton(
-                onClick = { navController.navigate("chat") },
+                onClick = { if (currentRoute != "chat") navController.navigate("chat") },
                 modifier = Modifier.size(65.dp)
             ) {
-                Icon(imageVector = Icons.Filled.Email , contentDescription = "Chat", tint = TextPrimary)
+                Icon(imageVector = Icons.Filled.Email , contentDescription = "Chat", tint = TextPrimary, modifier = Modifier.shadow(if (currentRoute == "chat") 68.dp else 0.dp, spotColor = MaterialTheme.colorScheme.primary))
             }
 
             IconButton(
-                onClick = { navController.navigate("settingsandprofile") },
+                onClick = { if (currentRoute != "settingsandprofile") navController.navigate("settingsandprofile") },
                 modifier = Modifier.size(65.dp)
             ) {
-                Icon(imageVector = Icons.Filled.Person , contentDescription = "Perfil", tint = TextPrimary)
+                Icon(imageVector = Icons.Filled.Person , contentDescription = "Perfil", tint = TextPrimary, modifier = Modifier.shadow(if (currentRoute == "settingsandprofile") 68.dp else 0.dp, spotColor = MaterialTheme.colorScheme.primary))
             }
         }
     }

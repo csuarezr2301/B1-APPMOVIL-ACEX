@@ -1,7 +1,9 @@
 package com.example.acexproyecto.views
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,21 +35,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
-
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@Composable
-fun chatView(navController: NavController) {
-    Scaffold(
-        topBar = { TopBar(navController) },
-        content = {
-            ChatView(
-                navController = navController,
-                activityId = "11", // Replace with actual activity ID
-            )
-        },
-        bottomBar = { BottomDetailBar(navController) }
-    )
-}
 
 @Composable
 fun ChatView(
@@ -308,5 +296,5 @@ data class Message(
 @Composable
 fun ProfileViewPreview() {
     val navController = rememberNavController()
-    chatView(navController)
+    ChatView(navController, "11")
 }
