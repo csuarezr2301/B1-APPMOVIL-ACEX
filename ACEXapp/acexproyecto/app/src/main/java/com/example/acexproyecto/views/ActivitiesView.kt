@@ -1,16 +1,21 @@
 package com.example.acexproyecto.views
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -21,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,6 +36,10 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.example.acexproyecto.ui.theme.ButtonPrimary
 import com.example.acexproyecto.ui.theme.TextPrimary
+import com.example.appacex.model.ActividadResponse
+import com.example.appacex.model.RetrofitClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 // Define color palette for the app
 val PrimaryColor = Color(0xFF79B3BB)   // Primary color (light blue)
@@ -62,7 +72,7 @@ fun ActivitiesView(navController: NavController) {
                             .fillMaxWidth()
                             .weight(1.5f) // Esto asegura que ocupe la mitad superior de la pantalla
                     ) {
-                        MisActividades(navController)
+                        AllActividades(navController)
                     }
 
                     // Espacio entre las secciones
@@ -111,10 +121,33 @@ fun SearchBar() {
     }
 }
 
-// MisActividades with updated colors
-@OptIn(ExperimentalGlideComposeApi::class)
+@OptIn(ExperimentalGlideComposeApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun MisActividades(navController: NavController) {
+fun AllActividades(navController: NavController) {
+    val actividades = remember { mutableStateListOf<ActividadResponse>() }
+    val isLoading = remember { mutableStateOf(true) }
+    val errorMessage = remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.instance.getActividades().execute()
+                if (response.isSuccessful) {
+                    val approvedActividades = response.body()?.filter { it.estado == "APROBADA" } ?: emptyList()
+                    actividades.addAll(approvedActividades)
+                } else {
+                    errorMessage.value = "Error: ${response.code()}"
+                }
+            } catch (e: Exception) {
+                errorMessage.value = "Exception: ${e.message}"
+            } finally {
+                withContext(Dispatchers.Main) {
+                    isLoading.value = false
+                }
+            }
+        }
+    }
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Actividades",
@@ -125,82 +158,19 @@ fun MisActividades(navController: NavController) {
             color = TextPrimary // Text color for section title
         )
 
-        // LazyColumn for activities
-        LazyColumn() {
-            items(2) { _ ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    repeat(2) {
-                        Card(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(8.dp)
-                                .height(180.dp)
-                            .clickable {
-                            // Navegar a otra pantalla con la información de la actividad
-                            navController.navigate("detalle_actividad_screen")
-                        },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = ButtonPrimary) // Card color
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                GlideImage(
-                                    model = "https://via.placeholder.com/150", // Image example
-                                    contentDescription = "Actividad",
-                                    modifier = Modifier
-                                        .size(100.dp)
-                                        .clip(CircleShape)
-                                        .padding(bottom = 8.dp),
-                                    contentScale = ContentScale.Crop
-                                )
-                                Text(
-                                    text = "Actividad",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary,
-                                    modifier = Modifier.padding(bottom = 8.dp),
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// OtrasActividades with updated colors
-@OptIn(ExperimentalGlideComposeApi::class)
-@Composable
-fun OtrasActividades(navController: NavController) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = "Mis Actividades",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier
-                .padding(bottom = 16.dp)
-                .align(Alignment.CenterHorizontally),
-            color = TextPrimary // Text color for section title
-        )
-
-        // LazyRow for other activities
-        LazyRow(modifier = Modifier.fillMaxWidth()) {
-            items(5) { _ ->
+        // LazyVerticalGrid for activities
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(actividades.size) { index ->
+                val actividad = actividades[index]
                 Card(
                     modifier = Modifier
-                        .padding(8.dp)
-                        .width(150.dp)
-                        .height(180.dp)
+                        .height(200.dp)
                         .clickable {
                             // Navegar a otra pantalla con la información de la actividad
                             navController.navigate("detalle_actividad_screen")
@@ -216,7 +186,7 @@ fun OtrasActividades(navController: NavController) {
                     ) {
                         GlideImage(
                             model = "https://via.placeholder.com/150", // Image example
-                            contentDescription = "Actividad",
+                            contentDescription = actividad.titulo,
                             modifier = Modifier
                                 .size(100.dp)
                                 .clip(CircleShape)
@@ -224,13 +194,100 @@ fun OtrasActividades(navController: NavController) {
                             contentScale = ContentScale.Crop
                         )
                         Text(
-                            text = "Actividad",
+                            text = actividad.titulo,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary,
                             modifier = Modifier.padding(bottom = 8.dp),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center
                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalGlideComposeApi::class)
+@Composable
+fun OtrasActividades(navController: NavController) {
+    val actividades = remember { mutableStateListOf<ActividadResponse>() }
+    val isLoading = remember { mutableStateOf(true) }
+    val errorMessage = remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.instance.getActividades().execute()
+                if (response.isSuccessful) {
+                    val approvedActividades = response.body()?.filter { it.estado == "APROBADA" } ?: emptyList()
+                    actividades.addAll(approvedActividades)
+                } else {
+                    errorMessage.value = "Error: ${response.code()}"
+                }
+            } catch (e: Exception) {
+                errorMessage.value = "Exception: ${e.message}"
+            } finally {
+                withContext(Dispatchers.Main) {
+                    isLoading.value = false
+                }
+            }
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "Mis Actividades",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier
+                .padding(bottom = 16.dp)
+                .align(Alignment.CenterHorizontally),
+            color = TextPrimary // Text color for section title
+        )
+
+        if (isLoading.value) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (errorMessage.value != null) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = errorMessage.value ?: "Unknown error", color = Color.Red)
+            }
+        } else {
+            LazyRow(modifier = Modifier.fillMaxWidth()) {
+                items(actividades.size) { index ->
+                    val actividad = actividades[index]
+                    Card(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .width(150.dp)
+                            .height(100.dp)
+                            .clickable {
+                                // Navegar a otra pantalla con la información de la actividad
+                                navController.navigate("detalle_actividad_screen")
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = ButtonPrimary) // Card color
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = actividad.titulo,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
             }

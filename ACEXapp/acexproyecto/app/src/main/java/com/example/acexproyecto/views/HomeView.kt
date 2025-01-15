@@ -244,7 +244,7 @@ fun UserInformation() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 10.dp),
+            .padding(top = 10.dp, start = 48.dp),
         contentAlignment = Alignment.CenterStart
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -361,7 +361,7 @@ fun ActivityCardItem(activityName: String, activityDate: String, index: Int, nav
                 navController.navigate("detalle_actividad_screen")
             },
         colors = CardDefaults.cardColors(
-            containerColor = ButtonPrimary // Color de fondo para las tarjetas
+            containerColor = MaterialTheme.colorScheme.surfaceVariant // Color de fondo para las tarjetas
         )
     ) {
         Column(
