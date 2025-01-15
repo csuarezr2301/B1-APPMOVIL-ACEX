@@ -113,12 +113,12 @@ fun SearchBar() {
                 Icon(imageVector = Icons.Filled.Search, contentDescription = "Buscar", tint = TextColor)
             },
             singleLine = true,
-            shape = RoundedCornerShape(8.dp),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
+            shape = RoundedCornerShape(8.dp)
+            /*colors = TextFieldDefaults.outlinedTextFieldColors(
                 containerColor = BackgroundColor,
                 focusedBorderColor = PrimaryColor,
                 unfocusedBorderColor = SecondaryColor
-            )
+            )*/
         )
     }
 }

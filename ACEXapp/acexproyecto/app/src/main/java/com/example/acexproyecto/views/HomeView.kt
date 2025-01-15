@@ -321,7 +321,7 @@ fun ActivityCardItem(activityName: String, activityDate: String, activityStatus:
             .height(110.dp)
             .clickable {
                 // Navegar a otra pantalla con la información de la actividad
-                navController.navigate("detalle_actividad_screen")
+                navController.navigate("detalle_actividad_screen/${index}")
             },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant // Color de fondo para las tarjetas

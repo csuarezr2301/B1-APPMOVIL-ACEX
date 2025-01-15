@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Cámara de fotos -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M20,4h-3.2l-1.8-2H8.9L7.1,4H4c-1.1,0 -2,0.9 -2,2v12c0,1.1 0.9,2 2,2h16c1.1,0 2-0.9 2-2V6c0-1.1 -0.9-2 -2-2zM12,17c-2.8,0 -5-2.2 -5-5s2.2-5 5-5 5,2.2 5,5 -2.2,5 -5,5z"/>
+    <!-- Símbolo de + en el centro del objetivo -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M13,11h2v2h-2v2h-2v-2H9v-2h2V9h2v2z"/>
+</vector>

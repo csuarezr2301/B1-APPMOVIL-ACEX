@@ -55,14 +55,30 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
-fun ActivityDetailView(navController: NavController) {
+fun ActivityDetailView(navController: NavController, activityId: String) {
+    var activity by remember { mutableStateOf<ActividadResponse?>(null) }
+
+    LaunchedEffect(activityId) {
+        withContext(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.instance.getActividades().execute()
+                if (response.isSuccessful) {
+                    activity = response.body()?.find { it.id == activityId.toInt() }
+                }
+            } catch (e: Exception) {
+                Log.e("ActivityDetailView", "Error fetching activity details", e)
+            }
+        }
+    }
+
     //cambiar la top bar para añadir el boton de regreso
     Scaffold(
         topBar = { TopBar(navController) },
         content = { paddingValues ->
             ActivityDetailContent(
                 navController = navController,
-                modifier = Modifier.padding(paddingValues)
+                modifier = Modifier.padding(paddingValues),
+                actividad = activity
             )
         },
         bottomBar = { BottomDetailBar(navController) }
@@ -72,7 +88,7 @@ fun ActivityDetailView(navController: NavController) {
 
 
 @Composable
-fun ActivityDetailContent(navController: NavController, modifier: Modifier = Modifier) {
+fun ActivityDetailContent(navController: NavController, modifier: Modifier = Modifier, actividad : ActividadResponse?) {
     var activityName by remember { mutableStateOf("Nombre de la actividad") }
     var activityDescription by remember { mutableStateOf("Descripción de la actividad. Aquí va la información detallada sobre la actividad, los objetivos y lo que ofrece.") }
     var isDialogVisible by remember { mutableStateOf(false) }
@@ -102,7 +118,7 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = activityName,
+                    text = actividad?.titulo ?: "Nombre de la actividad",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary,
@@ -121,7 +137,7 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
         }
 
         item {
-            Text(text = "Fecha de Actividad", color = TextPrimary)
+            Text(text = "Fecha: ${actividad?.fini} - ${actividad?.ffin}", color = TextPrimary)
             Spacer(modifier = Modifier.height(8.dp))
         }
 
@@ -147,9 +163,10 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
             ) {
                 items(selectedImages.size + 1) { index ->
                     if (index == 0) {
-                        Image(
-                            painter = painterResource(id = R.drawable.camarasubir),
+                        Icon(
+                            painter = painterResource(id = R.drawable.foto),
                             contentDescription = "Seleccionar foto",
+                            tint = ButtonPrimary,
                             modifier = Modifier
                                 .size(120.dp)
                                 .padding(end = 8.dp)
@@ -189,7 +206,7 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
                 }
                 item {
                     Text(
-                        text = activityDescription,
+                        text = actividad?.descripcion ?: "Descricion no encontrada",
                         fontSize = 16.sp,
                         color = TextPrimary
                     )
@@ -673,5 +690,5 @@ fun BotonGuardar() {
 @Composable
 fun ActivityScreenPreview() {
     val navController = rememberNavController()
-    ActivityDetailView(navController)
+    ActivityDetailView(navController, "11")
 }

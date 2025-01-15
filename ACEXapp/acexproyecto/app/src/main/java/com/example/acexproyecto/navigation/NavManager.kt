@@ -59,8 +59,9 @@ fun NavManager(navController: NavHostController, isDarkMode: Boolean, onThemeCha
         }
 
         // Pantalla de actividad detalles
-        composable("detalle_actividad_screen") {
-            ActivityDetailView(navController)
+        composable("detalle_actividad_screen/{activityId}") { backStackEntry ->
+            val activityId = backStackEntry.arguments?.getString("activityId") ?: return@composable
+            ActivityDetailView(navController = navController, activityId = activityId)
         }
 
         composable("chat/{activityId}") { backStackEntry ->
