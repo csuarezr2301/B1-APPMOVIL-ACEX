@@ -13,7 +13,6 @@ import androidx.compose.runtime.setValue
 import androidx.navigation.compose.rememberNavController
 import com.example.acexproyecto.navigation.NavManager
 import com.example.acexproyecto.ui.theme.acexproyecto_BaseTheme
-import com.example.acexproyecto.utils.Firebase
 import com.example.acexproyecto.views.MsalAppHolder
 import com.example.acexproyecto.views.checkFirebaseConnection
 import com.google.firebase.FirebaseApp
