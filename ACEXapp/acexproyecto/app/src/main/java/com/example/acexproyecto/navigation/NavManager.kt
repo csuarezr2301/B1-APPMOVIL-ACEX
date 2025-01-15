@@ -1,12 +1,14 @@
 package com.example.acexproyecto.navigation
 
 import android.app.Activity
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.acexproyecto.camara.CamaraView
 import com.example.acexproyecto.objetos.Loading
 import com.example.acexproyecto.views.ActividadesListView
 import com.example.acexproyecto.views.ActivitiesView

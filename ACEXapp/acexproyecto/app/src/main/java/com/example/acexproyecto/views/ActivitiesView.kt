@@ -175,7 +175,7 @@ fun AllActividades(navController: NavController) {
                         .height(200.dp)
                         .clickable {
                             // Navegar a otra pantalla con la información de la actividad
-                            navController.navigate("detalle_actividad_screen")
+                            navController.navigate("detalle_actividad_screen/${actividad.id}")
                         },
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant) // Card color
@@ -268,7 +268,7 @@ fun OtrasActividades(navController: NavController) {
                             .height(100.dp)
                             .clickable {
                                 // Navegar a otra pantalla con la información de la actividad
-                                navController.navigate("detalle_actividad_screen")
+                                navController.navigate("detalle_actividad_screen/${actividad.id}")
                             },
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant) // Card color
