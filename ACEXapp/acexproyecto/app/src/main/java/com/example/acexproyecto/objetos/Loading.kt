@@ -1,4 +1,4 @@
-package com.example.acexproyecto.model
+package com.example.acexproyecto.objetos
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

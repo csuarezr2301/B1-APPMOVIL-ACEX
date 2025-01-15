@@ -26,7 +26,6 @@ import com.microsoft.identity.client.ISingleAccountPublicClientApplication
 import android.app.Application
 import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import com.microsoft.identity.client.AcquireTokenParameters
 import com.microsoft.identity.client.AuthenticationCallback
@@ -35,8 +34,15 @@ import com.microsoft.identity.client.IPublicClientApplication
 import com.microsoft.identity.client.Prompt
 import com.microsoft.identity.client.PublicClientApplication
 import com.microsoft.identity.client.exception.MsalException
-import com.example.acexproyecto.model.Usuario
+import com.example.acexproyecto.objetos.Usuario
 import com.example.acexproyecto.utils.fetchUserProfile
+import com.microsoft.graph.http.GraphServiceException
+import com.microsoft.graph.requests.GraphServiceClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.concurrent.CompletableFuture
 
 
 object MsalAppHolder {
@@ -68,17 +74,33 @@ fun LoginView(navController: NavController) {
     val context = LocalContext.current as ComponentActivity
     var isLoading by remember { mutableStateOf(false) }
 
+
     fun showLoginDialog() {
+        val graphScopes = listOf(
+            "User.Read",
+            "Calendars.Read"
+        )
+
+        val apiScopes = listOf(
+            "api://7c80ff29-dc1d-47a3-9cc3-78997d1de943/access_as_user"
+        )
+
         val msalApp = MsalAppHolder.msalApp
         if (msalApp != null) {
             val parameters = AcquireTokenParameters.Builder()
                 .startAuthorizationFromActivity(context)
-                .withScopes(listOf("User.Read", "Calendars.Read"))
+                .withScopes(graphScopes)
                 .withPrompt(Prompt.SELECT_ACCOUNT)
                 .withCallback(object : AuthenticationCallback {
                     override fun onSuccess(authenticationResult: IAuthenticationResult) {
                         // Manejar el éxito de la autenticación
-                        val accessToken = authenticationResult.accessToken
+                        Usuario.msalToken = authenticationResult.accessToken
+                        CoroutineScope(Dispatchers.Main).launch {
+                            val calendarId = fetchCalendarId(authenticationResult.accessToken, "ACEX")
+                            if (calendarId != null) {
+                                Usuario.calendarId = calendarId
+                            }
+                        }
                         fetchUserProfile(context, authenticationResult) {
                             Usuario.account = authenticationResult.account?.username ?: ""
                             navController.navigate("home") {
@@ -101,6 +123,29 @@ fun LoginView(navController: NavController) {
 
             isLoading = true
             msalApp.acquireToken(parameters)
+
+            val apiParameters = AcquireTokenParameters.Builder()
+                .startAuthorizationFromActivity(context)
+                .withScopes(apiScopes)
+                .withPrompt(Prompt.SELECT_ACCOUNT)
+                .withCallback(object : AuthenticationCallback {
+                    override fun onSuccess(authenticationResult: IAuthenticationResult) {
+                        Usuario.apiToken = authenticationResult.accessToken
+                    }
+
+                    override fun onError(exception: MsalException) {
+                        // Handle authentication error
+                        Log.e("Authentication", "Custom API Error: ${exception.message}")
+                    }
+
+                    override fun onCancel() {
+                        // Handle user canceling the authentication
+                        Log.d("Authentication", "Custom API Authentication canceled")
+                    }
+                })
+                .build()
+
+            MsalAppHolder.msalApp?.acquireToken(apiParameters)
         } else {
             Log.e("LoginView", "MSAL app is not initialized")
         }
@@ -169,6 +214,42 @@ fun LoginView(navController: NavController) {
         }
     }
 }
+
+suspend fun fetchCalendarId(accessToken: String, calendarName: String): String? {
+    if (accessToken.isEmpty()) {
+        Log.e("fetchCalendarId", "Access token is empty")
+        return null
+    }
+
+    Log.d("fetchCalendarId", "Starting fetch with token: $accessToken")
+    return try {
+        withContext(Dispatchers.IO) {
+            val graphClient = GraphServiceClient
+                .builder()
+                .authenticationProvider { CompletableFuture.completedFuture(accessToken) }
+                .buildClient()
+
+            val calendars = graphClient.me().calendars().buildRequest()?.get()?.currentPage
+            Log.d("fetchCalendarId", "Calendars: $calendars")
+
+            val calendar = calendars?.find { it.name == calendarName }
+            if (calendar != null) {
+                Log.d("fetchCalendarId", "Found calendar: ${calendar.name} with ID: ${calendar.id}")
+                calendar.id
+            } else {
+                Log.e("fetchCalendarId", "Calendar with name $calendarName not found")
+                null
+            }
+        }
+    } catch (e: GraphServiceException) {
+        Log.e("fetchCalendarId", "Error fetching calendar ID", e)
+        null
+    } catch (e: Exception) {
+        Log.e("fetchCalendarId", "Unexpected error", e)
+        null
+    }
+}
+
 
 @Preview(showBackground = true)
 @Composable

@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
-import com.example.acexproyecto.model.Usuario
+import com.example.acexproyecto.objetos.Usuario
 import com.microsoft.graph.http.GraphServiceException
 import com.microsoft.graph.requests.GraphServiceClient
 import com.microsoft.identity.client.IAuthenticationResult

@@ -1,14 +1,10 @@
 package com.example.acexproyecto.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import com.example.acexproyecto.model.Loading
+import com.example.acexproyecto.objetos.Loading
 import com.example.acexproyecto.views.ActivitiesView
 import com.example.acexproyecto.views.ActivityDetailView
 import com.example.acexproyecto.views.HomeView
@@ -16,8 +12,6 @@ import com.example.acexproyecto.views.LoginView
 import com.example.acexproyecto.views.LocalizacionView
 import com.example.acexproyecto.views.SettingsView
 import com.example.acexproyecto.views.chatView
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 
 
 @Composable

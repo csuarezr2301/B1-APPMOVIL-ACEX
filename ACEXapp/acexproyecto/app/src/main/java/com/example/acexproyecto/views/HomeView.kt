@@ -28,8 +28,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
 import com.example.acexproyecto.R
-import com.example.acexproyecto.model.Loading
-import com.example.acexproyecto.model.Usuario
+import com.example.acexproyecto.objetos.Loading
+import com.example.acexproyecto.objetos.Usuario
 import com.example.acexproyecto.ui.theme.*  // Importa los colores personalizados
 import com.microsoft.identity.client.ISingleAccountPublicClientApplication
 import com.microsoft.identity.client.exception.MsalException
@@ -303,7 +303,9 @@ fun CalendarView() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Calendario("", "")
+            Log.e("Calendario", Usuario.msalToken)
+            Log.e("Calendario", Usuario.calendarId)
+            Calendario(Usuario.msalToken, Usuario.calendarId)
 
         }
 
