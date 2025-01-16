@@ -9,7 +9,9 @@ data class ActividadResponse(
     val hini: String,
     val hfin: String,
     val estado: String,
-    val solicitante: Solicitante
+    val solicitante: Solicitante,
+    val incidencias: String,
+    val comentarios:String
 )
 
 data class Solicitante(

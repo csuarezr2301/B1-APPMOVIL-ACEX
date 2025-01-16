@@ -7,6 +7,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+<<<<<<< Updated upstream
+=======
+import androidx.compose.foundation.lazy.items
+>>>>>>> Stashed changes
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -42,6 +46,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextFieldDefaults
+<<<<<<< Updated upstream
+=======
+import androidx.compose.ui.window.Popup
+>>>>>>> Stashed changes
 
 // Define color palette for the app
 val PrimaryColor = Color(0xFF79B3BB)   // Primary color (light blue)
@@ -53,9 +61,16 @@ val TextColor = Color(0xFF000000) // Text color (black)
 
 @Composable
 fun ActivitiesView(navController: NavController) {
+    var selectedFilter by remember { mutableStateOf<String?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+<<<<<<< Updated upstream
         topBar = {TopBar(navController)},
+=======
+        topBar = { TopBar(navController) },
+>>>>>>> Stashed changes
         content = { paddingValues ->
             Box(
                 modifier = Modifier
@@ -64,17 +79,29 @@ fun ActivitiesView(navController: NavController) {
             ) {
                 Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
-                    // Barra de búsqueda (debajo de la TopAppBar)
-                    SearchBar()
+                    // Barra de búsqueda con filtro
+                    SearchBar(
+                        onSearchQueryChanged = { query ->
+                            searchQuery = query  // Actualiza el texto de búsqueda
+                        },
+                        onFilterSelected = { filter ->
+                            selectedFilter = filter  // Actualiza el filtro
+                        }
+                    )
 
                     Spacer(modifier = Modifier.height(16.dp))
+
                     // Box para Mis Actividades (arriba)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1.5f) // Esto asegura que ocupe la mitad superior de la pantalla
                     ) {
+<<<<<<< Updated upstream
                         AllActividades(navController)
+=======
+                        AllActividades(navController, selectedFilter, searchQuery)
+>>>>>>> Stashed changes
                     }
 
                     // Espacio entre las secciones
@@ -95,16 +122,32 @@ fun ActivitiesView(navController: NavController) {
     )
 }
 
+<<<<<<< Updated upstream
 // Search bar with updated colors
 @OptIn(ExperimentalMaterial3Api::class)
+=======
+
+
+// Barra de búsqueda con filtro
+>>>>>>> Stashed changes
 @Composable
-fun SearchBar() {
-    var searchText by remember { mutableStateOf("") } // Almacenar el texto de búsqueda
+fun SearchBar(
+    onSearchQueryChanged: (String) -> Unit, // Callback para recibir el texto de búsqueda
+    onFilterSelected: (String?) -> Unit // Callback para recibir el filtro seleccionado
+) {
+    var searchText by remember { mutableStateOf("") }
+    val filterOptions = listOf("Aprobada", "Realizada", "Cancelada", "Todas")
+    var selectedFilter by remember { mutableStateOf<String?>(null) }  // Valor por defecto
+    var showPopup by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
+        // Barra de búsqueda
         OutlinedTextField(
             value = searchText,
-            onValueChange = { searchText = it },
+            onValueChange = {
+                searchText = it
+                onSearchQueryChanged(it) // Actualizamos la búsqueda cada vez que cambia el texto
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp), // Espaciado superior
@@ -113,6 +156,7 @@ fun SearchBar() {
                 Icon(imageVector = Icons.Filled.Search, contentDescription = "Buscar", tint = TextColor)
             },
             singleLine = true,
+<<<<<<< Updated upstream
             shape = RoundedCornerShape(8.dp)
             /*colors = TextFieldDefaults.outlinedTextFieldColors(
                 containerColor = BackgroundColor,
@@ -205,6 +249,47 @@ fun AllActividades(navController: NavController) {
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center
                         )
+=======
+            shape = RoundedCornerShape(8.dp),
+            trailingIcon = {
+                // Ícono de filtro dentro de la barra de búsqueda
+                IconButton(onClick = { showPopup = !showPopup }) {
+                    Icon(imageVector = Icons.Filled.Menu, contentDescription = "Filtrar")
+                }
+            }
+        )
+
+        // Si showPopup es verdadero, se muestra el popup
+        if (showPopup) {
+            Popup(
+                alignment = Alignment.TopStart,
+                onDismissRequest = { showPopup = false }
+            ) {
+                // Aquí creamos el contenido del Popup
+                Card(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    colors = CardDefaults.cardColors(containerColor = TertiaryColor)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        filterOptions.forEach { filter ->
+                            Text(
+                                text = filter,
+                                modifier = Modifier
+                                    .clickable {
+                                        // Cuando se selecciona "Todas", asignamos null para no aplicar filtro
+                                        selectedFilter = if (filter == "Todas") null else filter
+                                        onFilterSelected(selectedFilter) // Llamamos al callback
+                                        showPopup = false // Cerramos el popup
+                                    }
+                                    .padding(8.dp)
+                                    .fillMaxWidth(),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = TextPrimary
+                            )
+                        }
+>>>>>>> Stashed changes
                     }
                 }
             }
@@ -212,6 +297,97 @@ fun AllActividades(navController: NavController) {
     }
 }
 
+<<<<<<< Updated upstream
+=======
+@OptIn(ExperimentalGlideComposeApi::class, ExperimentalFoundationApi::class)
+@Composable
+fun AllActividades(navController: NavController, selectedFilter: String?, searchQuery: String) {
+    val actividades = remember { mutableStateListOf<ActividadResponse>() }
+    val isLoading = remember { mutableStateOf(true) }
+    val errorMessage = remember { mutableStateOf<String?>(null) }
+
+    // Actualizamos la carga de actividades y filtrado aquí
+    LaunchedEffect(selectedFilter, searchQuery) {
+        withContext(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.instance.getActividades().execute()
+                if (response.isSuccessful) {
+                    // Filtramos actividades aquí
+                    val filteredActividades = response.body()?.filter { actividad ->
+                        // Si no hay filtro, mostramos todas las actividades
+                        val matchesFilter = if (selectedFilter != null) {
+                            actividad.estado.equals(selectedFilter, ignoreCase = true)
+                        } else {
+                            true // Si no hay filtro, no se aplica ninguno (mostrar todas)
+                        }
+
+                        // Filtramos por búsqueda
+                        val matchesSearchQuery = actividad.titulo.contains(searchQuery, ignoreCase = true)
+
+                        // Solo mantenemos actividades que coinciden con ambos filtros
+                        matchesFilter && matchesSearchQuery
+                    } ?: emptyList()
+
+                    actividades.clear()
+                    actividades.addAll(filteredActividades)
+                } else {
+                    errorMessage.value = "Error: ${response.code()}"
+                }
+            } catch (e: Exception) {
+                errorMessage.value = "Exception: ${e.message}"
+            } finally {
+                withContext(Dispatchers.Main) {
+                    isLoading.value = false
+                }
+            }
+        }
+    }
+
+    // Composición de la interfaz de usuario
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "Actividades",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier
+                .padding(bottom = 15.dp)
+                .align(Alignment.CenterHorizontally),
+            color = TextPrimary
+        )
+
+        if (isLoading.value) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (errorMessage.value != null) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = errorMessage.value ?: "Unknown error", color = Color.Red)
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(actividades.size) { index ->
+                    val actividad = actividades[index]
+                    // Usamos el componente ActivityCardItem aquí
+                    ActivityCardItem(
+                        activityName = actividad.titulo,
+                        activityDate = actividad.fini, // Asegúrate de que 'fecha' sea un campo válido
+                        activityStatus = actividad.estado,
+                        index = actividad.id, // Usamos el ID para navegar a la pantalla de detalles
+                        navController = navController
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+>>>>>>> Stashed changes
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun OtrasActividades(navController: NavController) {
@@ -246,7 +422,7 @@ fun OtrasActividades(navController: NavController) {
             modifier = Modifier
                 .padding(bottom = 16.dp)
                 .align(Alignment.CenterHorizontally),
-            color = TextPrimary // Text color for section title
+            color = TextPrimary // Color del texto para el título de la sección
         )
 
         if (isLoading.value) {
@@ -255,12 +431,17 @@ fun OtrasActividades(navController: NavController) {
             }
         } else if (errorMessage.value != null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+<<<<<<< Updated upstream
                 Text(text = errorMessage.value ?: "Unknown error", color = Color.Red)
+=======
+                Text(text = errorMessage.value ?: "Error desconocido", color = Color.Red)
+>>>>>>> Stashed changes
             }
         } else {
             LazyRow(modifier = Modifier.fillMaxWidth()) {
                 items(actividades.size) { index ->
                     val actividad = actividades[index]
+<<<<<<< Updated upstream
                     Card(
                         modifier = Modifier
                             .padding(8.dp)
@@ -291,12 +472,21 @@ fun OtrasActividades(navController: NavController) {
                             )
                         }
                     }
+=======
+                    // Usamos el componente ActivityCardItem
+                    ActivityCardItem(
+                        activityName = actividad.titulo,
+                        activityDate = actividad.fini , // Asegúrate de que 'fecha' sea un campo válido
+                        activityStatus = actividad.estado,
+                        index = actividad.id, // Usamos el ID para navegar a la pantalla de detalles
+                        navController = navController
+                    )
+>>>>>>> Stashed changes
                 }
             }
         }
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable

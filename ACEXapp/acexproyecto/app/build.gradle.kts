@@ -89,6 +89,8 @@ dependencies {
     implementation(libs.protolite.well.known.types)
     implementation(libs.play.services.maps)
 
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0") // Coroutines para Android    
+
     implementation("com.google.android.gms:play-services-maps:19.0.0")
     implementation("com.google.android.gms:play-services-maps:18.0.2")
     implementation("com.google.maps.android:maps-compose:2.0.0")

@@ -47,14 +47,26 @@ import com.example.acexproyecto.ui.theme.ButtonPrimary
 import com.example.acexproyecto.ui.theme.TextPrimary
 import com.example.acexproyecto.utils.SharedViewModel
 import com.example.appacex.model.ActividadResponse
+import com.example.appacex.model.ProfesorParticipanteResponse
+import com.example.appacex.model.ProfesorResponse
 import com.example.appacex.model.RetrofitClient
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.acexproyecto.objetos.Loading.isLoading
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import retrofit2.Response
 
 @Composable
 fun ActivityDetailView(navController: NavController, activityId: String) {
@@ -139,7 +151,11 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
         }
 
         item {
+<<<<<<< Updated upstream
             Text(text = "Fecha: ${actividad?.fini} - ${actividad?.ffin}", color = TextPrimary)
+=======
+            Text(text = "Fecha: ${actividad?.fini} a ${actividad?.ffin}", color = TextPrimary)
+>>>>>>> Stashed changes
             Spacer(modifier = Modifier.height(8.dp))
         }
 
@@ -223,10 +239,11 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
                     .height(240.dp)
                     .padding(vertical = 8.dp)
             ) {
+                var activity by remember { mutableStateOf<ActividadResponse?>(null) }
                 AlumnosAsistentes()
                 ProfesoresAsistentes()
                 Spacer(modifier = Modifier.height(15.dp))
-                Observaciones()
+                Observaciones(actividad = activity)
             }
         }
 
@@ -357,51 +374,126 @@ fun AlumnosAsistentes() {
         )
     }
 }
+
 @Composable
 fun ProfesoresAsistentes() {
-    var profesores by remember { mutableStateOf(listOf("Profesor 1", "Profesor 2")) }
-    var isDialogVisible by remember { mutableStateOf(false) }
+    // Estado para los profesores generales, profesores asistentes y sus estados de carga
+    var profesoresLista by remember { mutableStateOf<List<ProfesorResponse>>(emptyList()) }
+    var profesoresAsistentes by remember { mutableStateOf<List<ProfesorParticipanteResponse>>(emptyList()) }
+    var isLoadingProfesores by remember { mutableStateOf(true) }
+    var isLoadingAsistentes by remember { mutableStateOf(true) }
+
+    // Estado para la búsqueda y los profesores seleccionados (asociados a la actividad)
     var searchQuery by remember { mutableStateOf("") }
-
-    // Lista de profesores (puedes reemplazarla con datos reales)
-    val profesoresLista = listOf(
-        "Profesor 1", "Profesor 2", "Profesor 3", "Profesor 4", "Profesor 5",
-        "Profesor 6", "Profesor 7", "Profesor 8", "Profesor 9", "Profesor 10"
-    )
-    // Lista de profesores seleccionados
     var selectedProfesores by remember { mutableStateOf(setOf<String>()) }
+    var isDialogVisible by remember { mutableStateOf(false) }
 
-    // Filtrar la lista de profesores según la búsqueda
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Llamada a la API para obtener los datos de los profesores y los asistentes
+    LaunchedEffect(Unit) {
+        // Ejecutamos las llamadas a la API en el Dispatcher.IO para evitar el error de red en el hilo principal
+        try {
+            withContext(Dispatchers.IO) {
+                // Llamada a la API para obtener la lista de profesores
+                val responseProfesores: Response<List<ProfesorResponse>> = RetrofitClient.instance.getProfesores().execute()
+                if (responseProfesores.isSuccessful) {
+                    profesoresLista = responseProfesores.body() ?: emptyList()
+                    Log.d("ProfesoresAsistentes", "Profesores obtenidos: ${profesoresLista.size}")
+                } else {
+                    errorMessage = "Error al obtener la lista de profesores: ${responseProfesores.errorBody()}"
+                }
+
+                // Llamada a la API para obtener los profesores asistentes
+                val responseAsistentes: Response<List<ProfesorParticipanteResponse>> = RetrofitClient.instance.getProfesoresparticipantes().execute()
+                if (responseAsistentes.isSuccessful) {
+                    profesoresAsistentes = responseAsistentes.body() ?: emptyList()
+                    Log.d("ProfesoresAsistentes", "Profesores asistentes obtenidos: ${profesoresAsistentes.size}")
+                } else {
+                    errorMessage = "Error al obtener profesores asistentes: ${responseAsistentes.errorBody()}"
+                }
+            }
+        } catch (e: Exception) {
+            errorMessage = "Error al hacer la llamada a la API: ${e.message}"
+            Log.e("ProfesoresAsistentes", "Error al hacer la llamada a la API", e)
+        } finally {
+            // Finalmente, actualizamos los estados de carga en el hilo principal
+            withContext(Dispatchers.Main) {
+                isLoadingProfesores = false
+                isLoadingAsistentes = false
+            }
+        }
+    }
+
+    // Filtrar la lista de profesores generales según la búsqueda
     val filteredProfesores = profesoresLista.filter {
-        it.contains(searchQuery, ignoreCase = true)
+        it.nombre.contains(searchQuery, ignoreCase = true) || it.apellidos.contains(searchQuery, ignoreCase = true)
+    }
+
+    // Filtrar los profesores asistentes según la lista de profesores seleccionados
+    val profesoresAsistentesFiltrados = profesoresLista.filter { profesor ->
+        profesoresAsistentes.any { asistente ->
+            asistente.profesor.uuid == profesor.uuid  // Compara UUIDs de los profesores
+        }
+    }
+
+    // Mostrar un indicador de carga mientras se obtiene la respuesta
+    if (isLoadingProfesores || isLoadingAsistentes) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator() // Indicador de carga
+        }
     }
 
     // Fila para Profesores Asistentes
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text(
-            text = "Profesores Asistentes",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = TextPrimary,
-            modifier = Modifier.weight(1f)
-        )
-        IconButton(onClick = { isDialogVisible = true }) {
-            Icon(
-                imageVector = Icons.Filled.Edit,
-                contentDescription = "Editar",
-                tint = TextPrimary
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Profesores Asistentes",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(onClick = { isDialogVisible = true }) {
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = "Editar",
+                    tint = TextPrimary
+                )
+            }
+        }
+
+        // Mostrar la lista de profesores de la actividad debajo del título
+        if (profesoresAsistentesFiltrados.isNotEmpty()) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                profesoresAsistentesFiltrados.forEach { profesor ->
+                    // Mostrar nombre y apellido de los profesores
+                    Text(
+                        text = "${profesor.nombre} ${profesor.apellidos}",
+                        fontSize = 16.sp,
+                        color = TextPrimary,
+                        modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 4.dp)
+                    )
+                }
+            }
+        } else {
+            // Si no hay profesores asignados, mostrar un mensaje
+            Text(
+                text = "No hay profesores asignados.",
+                fontSize = 16.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(16.dp)
             )
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
-    Text(
-        text = profesores.joinToString(", "),
-        fontSize = 16.sp,
-        color = TextPrimary
-    )
-    Spacer(modifier = Modifier.height(8.dp))
 
     // Mostrar el popup con la lista de profesores
     if (isDialogVisible) {
@@ -413,62 +505,59 @@ fun ProfesoresAsistentes() {
                     // Barra de búsqueda
                     TextField(
                         value = searchQuery,
-                        onValueChange = { searchQuery = it },
+                        onValueChange = { searchQuery = it }, // 'it' hace referencia al nuevo valor de searchQuery
                         label = { Text("Buscar Profesor") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    // Mostrar lista de profesores filtrados
+                    if (filteredProfesores.isNotEmpty()) {
+                        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                            items(filteredProfesores) { profesor ->
+                                val nombreCompleto = "${profesor.nombre} ${profesor.apellidos}"
+                                val isSelected = selectedProfesores.contains(nombreCompleto)
 
-
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        items(filteredProfesores) { profesor ->
-                            val isSelected = selectedProfesores.contains(profesor)
-
-                            // Caja de selección (Checkbox) dentro de cada ítem
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        // Alternar entre agregar o quitar el profesor de la lista de seleccionados
-                                        if (isSelected) {
-                                            selectedProfesores =
-                                                selectedProfesores - profesor // Eliminar
-                                        } else {
-                                            selectedProfesores =
-                                                selectedProfesores + profesor // Agregar
+                                // Caja de selección (Checkbox) dentro de cada ítem
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            // Alternar entre agregar o quitar el profesor de la lista de seleccionados
+                                            selectedProfesores = if (isSelected) {
+                                                selectedProfesores - nombreCompleto
+                                            } else {
+                                                selectedProfesores + nombreCompleto
+                                            }
                                         }
-                                    }
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Checkbox(
-                                    checked = isSelected,
-                                    onCheckedChange = {
-                                        // Cambiar el estado al hacer clic en el checkbox
-                                        if (it) {
-                                            selectedProfesores = selectedProfesores + profesor
-                                        } else {
-                                            selectedProfesores = selectedProfesores - profesor
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = isSelected,
+                                        onCheckedChange = { checked ->
+                                            selectedProfesores = if (checked) {
+                                                selectedProfesores + nombreCompleto
+                                            } else {
+                                                selectedProfesores - nombreCompleto
+                                            }
                                         }
-                                    }
-                                )
+                                    )
 
-                                // Mostrar el nombre del profesor
-                                Text(
-                                    text = profesor,
-                                    fontSize = 16.sp,
-                                    modifier = Modifier.padding(start = 16.dp)
-                                )
+                                    // Mostrar el nombre completo del profesor
+                                    Text(
+                                        text = nombreCompleto,
+                                        fontSize = 16.sp,
+                                        modifier = Modifier.padding(start = 16.dp)
+                                    )
+                                }
                             }
                         }
-                    }
-
-                    // Mostrar la lista de profesores seleccionados
-                    if (selectedProfesores.isNotEmpty()) {
+                    } else {
                         Text(
-                            text = "Profesores seleccionados: ${selectedProfesores.joinToString(", ")}",
+                            text = "No se encontraron resultados para la búsqueda.",
+                            color = Color.Gray,
                             modifier = Modifier.padding(16.dp)
                         )
                     }
@@ -476,14 +565,17 @@ fun ProfesoresAsistentes() {
             },
             confirmButton = {
                 Button(
-                    onClick = { // Guardar la lista de seleccionados
-
-                        // Actualizar la lista de profesores seleccionados
-                        profesores = selectedProfesores.toList()
+                    onClick = {
+                        // Guardar la lista de seleccionados
                         isDialogVisible = false
                     }
                 ) {
                     Text("Guardar")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { isDialogVisible = false }) {
+                    Text("Cancelar")
                 }
             }
         )
@@ -493,8 +585,8 @@ fun ProfesoresAsistentes() {
 
 
 @Composable
-fun Observaciones() {
-    var observaciones by remember { mutableStateOf("Observaciones sobre la actividad") }
+fun Observaciones(actividad : ActividadResponse?) {
+    var observaciones by remember { mutableStateOf(actividad?.incidencias ?: "No hay observaciones e incidencias") }
     var isDialogVisible by remember { mutableStateOf(false) }
 
     // Fila para Observaciones
@@ -518,7 +610,7 @@ fun Observaciones() {
         }
     }
     Text(
-        text = observaciones,
+        text = actividad?.incidencias ?: "No hay Observaciones e Incidencias",
         fontSize = 16.sp,
         color = TextPrimary
     )
