@@ -63,6 +63,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.acexproyecto.model.GrupoParticipanteResponse
+import com.example.acexproyecto.model.GrupoResponse
 import com.example.acexproyecto.objetos.Loading.isLoading
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -71,6 +73,9 @@ import retrofit2.Response
 @Composable
 fun ActivityDetailView(navController: NavController, activityId: String) {
     var activity by remember { mutableStateOf<ActividadResponse?>(null) }
+    var numeroAlumnos by remember { mutableStateOf(0) }
+    var grupoParticipantes by remember { mutableStateOf<List<GrupoParticipanteResponse>>(emptyList()) }
+    var profAsistentes by remember { mutableStateOf<List<ProfesorParticipanteResponse>>(emptyList()) }
 
     LaunchedEffect(activityId) {
         withContext(Dispatchers.IO) {
@@ -78,6 +83,18 @@ fun ActivityDetailView(navController: NavController, activityId: String) {
                 val response = RetrofitClient.instance.getActividades().execute()
                 if (response.isSuccessful) {
                     activity = response.body()?.find { it.id == activityId.toInt() }
+                }
+                val grupoResponse = RetrofitClient.instance.getGrupoParticipantes().execute()
+                if (grupoResponse.isSuccessful) {
+                    grupoParticipantes = grupoResponse.body()?.filter { it.actividades.id == activityId.toInt() } ?: emptyList()
+                    val totalParticipantes = grupoParticipantes.sumOf { it.numParticipantes }
+                    withContext(Dispatchers.Main) {
+                        numeroAlumnos = totalParticipantes
+                    }
+                }
+                val responseAsistentes = RetrofitClient.instance.getProfesoresparticipantes().execute()
+                if (responseAsistentes.isSuccessful) {
+                    profAsistentes = responseAsistentes.body()?.filter { it.actividad.id == activityId.toInt() } ?: emptyList()
                 }
             } catch (e: Exception) {
                 Log.e("ActivityDetailView", "Error fetching activity details", e)
@@ -92,7 +109,10 @@ fun ActivityDetailView(navController: NavController, activityId: String) {
             ActivityDetailContent(
                 navController = navController,
                 modifier = Modifier.padding(paddingValues),
-                actividad = activity
+                actividad = activity,
+                numAlumnos = numeroAlumnos,
+                gruposParticipantes = grupoParticipantes,
+                profAsistentes = profAsistentes
             )
         },
         bottomBar = { BottomDetailBar(navController) }
@@ -102,7 +122,7 @@ fun ActivityDetailView(navController: NavController, activityId: String) {
 
 
 @Composable
-fun ActivityDetailContent(navController: NavController, modifier: Modifier = Modifier, actividad : ActividadResponse?) {
+fun ActivityDetailContent(navController: NavController, modifier: Modifier = Modifier, actividad : ActividadResponse?, numAlumnos: Int, gruposParticipantes: List<GrupoParticipanteResponse>, profAsistentes: List<ProfesorParticipanteResponse>) {
     var activityName by remember { mutableStateOf("Nombre de la actividad") }
     var activityDescription by remember { mutableStateOf("Descripción de la actividad. Aquí va la información detallada sobre la actividad, los objetivos y lo que ofrece.") }
     var isDialogVisible by remember { mutableStateOf(false) }
@@ -117,6 +137,7 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
 
     var isPopupVisible by remember { mutableStateOf(false) }
     var isCameraVisible by remember { mutableStateOf(false) }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -151,11 +172,7 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
         }
 
         item {
-<<<<<<< Updated upstream
-            Text(text = "Fecha: ${actividad?.fini} - ${actividad?.ffin}", color = TextPrimary)
-=======
             Text(text = "Fecha: ${actividad?.fini} a ${actividad?.ffin}", color = TextPrimary)
->>>>>>> Stashed changes
             Spacer(modifier = Modifier.height(8.dp))
         }
 
@@ -236,12 +253,10 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
             Column (
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(240.dp)
-                    .padding(vertical = 8.dp)
             ) {
                 var activity by remember { mutableStateOf<ActividadResponse?>(null) }
-                AlumnosAsistentes()
-                ProfesoresAsistentes()
+                AlumnosAsistentes(numAlumnos, gruposParticipantes)
+                ProfesoresAsistentes(profAsistentes)
                 Spacer(modifier = Modifier.height(15.dp))
                 Observaciones(actividad = activity)
             }
@@ -310,9 +325,9 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
 
 
 @Composable
-fun AlumnosAsistentes() {
+fun AlumnosAsistentes(numAlumnos: Int, gruposParticipantes: List<GrupoParticipanteResponse>) {
     var isDialogVisible by remember { mutableStateOf(false) }
-    var numeroAlumnos by remember { mutableStateOf("10") }
+    //var numeroAlumnos by remember { mutableStateOf("10") }
 
     // Fila para Alumnos Asistentes
     Row(
@@ -327,7 +342,7 @@ fun AlumnosAsistentes() {
             modifier = Modifier.weight(1f)
         )
         Text(
-            text = numeroAlumnos,
+            text = numAlumnos.toString(),
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary,
@@ -341,6 +356,41 @@ fun AlumnosAsistentes() {
             )
         }
     }
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    gruposParticipantes.forEach { grupoParticipante ->
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = grupoParticipante.grupo.codGrupo,
+                fontSize = 16.sp,
+                color = TextPrimary,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = grupoParticipante.numParticipantes.toString(),
+                fontSize = 16.sp,
+                color = TextPrimary,
+                modifier = Modifier.weight(0.15f)
+            )
+            Text(
+                text = "/",
+                fontSize = 16.sp,
+                color = TextPrimary,
+                modifier = Modifier.weight(0.15f)
+            )
+            Text(
+                text = grupoParticipante.grupo.numAlumnos.toString(),
+                fontSize = 16.sp,
+                color = TextPrimary,
+                modifier = Modifier.weight(0.15f)
+            )
+        }
+    }
+
     Spacer(modifier = Modifier.height(8.dp))
 
     // Diálogo para editar número de alumnos
@@ -350,8 +400,9 @@ fun AlumnosAsistentes() {
             title = { Text(text = "Editar número de alumnos") },
             text = {
                 TextField(
-                    value = numeroAlumnos,
-                    onValueChange = { numeroAlumnos = it },
+                    value = numAlumnos.toString(),
+                    onValueChange = {},
+                    //{ numAlumnos = it },
                     label = { Text("Número de alumnos") },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
@@ -376,10 +427,9 @@ fun AlumnosAsistentes() {
 }
 
 @Composable
-fun ProfesoresAsistentes() {
+fun ProfesoresAsistentes(profAsistentes: List<ProfesorParticipanteResponse>) {
     // Estado para los profesores generales, profesores asistentes y sus estados de carga
     var profesoresLista by remember { mutableStateOf<List<ProfesorResponse>>(emptyList()) }
-    var profesoresAsistentes by remember { mutableStateOf<List<ProfesorParticipanteResponse>>(emptyList()) }
     var isLoadingProfesores by remember { mutableStateOf(true) }
     var isLoadingAsistentes by remember { mutableStateOf(true) }
 
@@ -392,6 +442,7 @@ fun ProfesoresAsistentes() {
 
     // Llamada a la API para obtener los datos de los profesores y los asistentes
     LaunchedEffect(Unit) {
+        Log.d("ProfesoresAsistentes", "${profAsistentes.size}")
         // Ejecutamos las llamadas a la API en el Dispatcher.IO para evitar el error de red en el hilo principal
         try {
             withContext(Dispatchers.IO) {
@@ -402,15 +453,6 @@ fun ProfesoresAsistentes() {
                     Log.d("ProfesoresAsistentes", "Profesores obtenidos: ${profesoresLista.size}")
                 } else {
                     errorMessage = "Error al obtener la lista de profesores: ${responseProfesores.errorBody()}"
-                }
-
-                // Llamada a la API para obtener los profesores asistentes
-                val responseAsistentes: Response<List<ProfesorParticipanteResponse>> = RetrofitClient.instance.getProfesoresparticipantes().execute()
-                if (responseAsistentes.isSuccessful) {
-                    profesoresAsistentes = responseAsistentes.body() ?: emptyList()
-                    Log.d("ProfesoresAsistentes", "Profesores asistentes obtenidos: ${profesoresAsistentes.size}")
-                } else {
-                    errorMessage = "Error al obtener profesores asistentes: ${responseAsistentes.errorBody()}"
                 }
             }
         } catch (e: Exception) {
@@ -428,23 +470,6 @@ fun ProfesoresAsistentes() {
     // Filtrar la lista de profesores generales según la búsqueda
     val filteredProfesores = profesoresLista.filter {
         it.nombre.contains(searchQuery, ignoreCase = true) || it.apellidos.contains(searchQuery, ignoreCase = true)
-    }
-
-    // Filtrar los profesores asistentes según la lista de profesores seleccionados
-    val profesoresAsistentesFiltrados = profesoresLista.filter { profesor ->
-        profesoresAsistentes.any { asistente ->
-            asistente.profesor.uuid == profesor.uuid  // Compara UUIDs de los profesores
-        }
-    }
-
-    // Mostrar un indicador de carga mientras se obtiene la respuesta
-    if (isLoadingProfesores || isLoadingAsistentes) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator() // Indicador de carga
-        }
     }
 
     // Fila para Profesores Asistentes
@@ -470,12 +495,12 @@ fun ProfesoresAsistentes() {
         }
 
         // Mostrar la lista de profesores de la actividad debajo del título
-        if (profesoresAsistentesFiltrados.isNotEmpty()) {
+        if (profAsistentes.isNotEmpty()) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                profesoresAsistentesFiltrados.forEach { profesor ->
+                profAsistentes.forEach { profesor ->
                     // Mostrar nombre y apellido de los profesores
                     Text(
-                        text = "${profesor.nombre} ${profesor.apellidos}",
+                        text = "${profesor.profesor.nombre} ${profesor.profesor.apellidos}",
                         fontSize = 16.sp,
                         color = TextPrimary,
                         modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 4.dp)

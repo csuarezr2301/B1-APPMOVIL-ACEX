@@ -7,10 +7,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-<<<<<<< Updated upstream
-=======
+
 import androidx.compose.foundation.lazy.items
->>>>>>> Stashed changes
+
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -46,10 +45,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextFieldDefaults
-<<<<<<< Updated upstream
-=======
 import androidx.compose.ui.window.Popup
->>>>>>> Stashed changes
+
 
 // Define color palette for the app
 val PrimaryColor = Color(0xFF79B3BB)   // Primary color (light blue)
@@ -66,11 +63,7 @@ fun ActivitiesView(navController: NavController) {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-<<<<<<< Updated upstream
-        topBar = {TopBar(navController)},
-=======
         topBar = { TopBar(navController) },
->>>>>>> Stashed changes
         content = { paddingValues ->
             Box(
                 modifier = Modifier
@@ -97,11 +90,7 @@ fun ActivitiesView(navController: NavController) {
                             .fillMaxWidth()
                             .weight(1.5f) // Esto asegura que ocupe la mitad superior de la pantalla
                     ) {
-<<<<<<< Updated upstream
-                        AllActividades(navController)
-=======
                         AllActividades(navController, selectedFilter, searchQuery)
->>>>>>> Stashed changes
                     }
 
                     // Espacio entre las secciones
@@ -122,14 +111,7 @@ fun ActivitiesView(navController: NavController) {
     )
 }
 
-<<<<<<< Updated upstream
-// Search bar with updated colors
-@OptIn(ExperimentalMaterial3Api::class)
-=======
-
-
 // Barra de búsqueda con filtro
->>>>>>> Stashed changes
 @Composable
 fun SearchBar(
     onSearchQueryChanged: (String) -> Unit, // Callback para recibir el texto de búsqueda
@@ -156,100 +138,6 @@ fun SearchBar(
                 Icon(imageVector = Icons.Filled.Search, contentDescription = "Buscar", tint = TextColor)
             },
             singleLine = true,
-<<<<<<< Updated upstream
-            shape = RoundedCornerShape(8.dp)
-            /*colors = TextFieldDefaults.outlinedTextFieldColors(
-                containerColor = BackgroundColor,
-                focusedBorderColor = PrimaryColor,
-                unfocusedBorderColor = SecondaryColor
-            )*/
-        )
-    }
-}
-
-@OptIn(ExperimentalGlideComposeApi::class, ExperimentalFoundationApi::class)
-@Composable
-fun AllActividades(navController: NavController) {
-    val actividades = remember { mutableStateListOf<ActividadResponse>() }
-    val isLoading = remember { mutableStateOf(true) }
-    val errorMessage = remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            try {
-                val response = RetrofitClient.instance.getActividades().execute()
-                if (response.isSuccessful) {
-                    val approvedActividades = response.body()?.filter { it.estado == "APROBADA" } ?: emptyList()
-                    actividades.addAll(approvedActividades)
-                } else {
-                    errorMessage.value = "Error: ${response.code()}"
-                }
-            } catch (e: Exception) {
-                errorMessage.value = "Exception: ${e.message}"
-            } finally {
-                withContext(Dispatchers.Main) {
-                    isLoading.value = false
-                }
-            }
-        }
-    }
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = "Actividades",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier
-                .padding(bottom = 16.dp)
-                .align(Alignment.CenterHorizontally),
-            color = TextPrimary // Text color for section title
-        )
-
-        // LazyVerticalGrid for activities
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(actividades.size) { index ->
-                val actividad = actividades[index]
-                Card(
-                    modifier = Modifier
-                        .height(200.dp)
-                        .clickable {
-                            // Navegar a otra pantalla con la información de la actividad
-                            navController.navigate("detalle_actividad_screen/${actividad.id}")
-                        },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant) // Card color
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        GlideImage(
-                            model = "https://via.placeholder.com/150", // Image example
-                            contentDescription = actividad.titulo,
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clip(CircleShape)
-                                .padding(bottom = 8.dp),
-                            contentScale = ContentScale.Crop
-                        )
-                        Text(
-                            text = actividad.titulo,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
-                            modifier = Modifier.padding(bottom = 8.dp),
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
-                        )
-=======
             shape = RoundedCornerShape(8.dp),
             trailingIcon = {
                 // Ícono de filtro dentro de la barra de búsqueda
@@ -289,7 +177,6 @@ fun AllActividades(navController: NavController) {
                                 color = TextPrimary
                             )
                         }
->>>>>>> Stashed changes
                     }
                 }
             }
@@ -297,8 +184,6 @@ fun AllActividades(navController: NavController) {
     }
 }
 
-<<<<<<< Updated upstream
-=======
 @OptIn(ExperimentalGlideComposeApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun AllActividades(navController: NavController, selectedFilter: String?, searchQuery: String) {
@@ -387,7 +272,6 @@ fun AllActividades(navController: NavController, selectedFilter: String?, search
 }
 
 
->>>>>>> Stashed changes
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun OtrasActividades(navController: NavController) {
@@ -431,48 +315,12 @@ fun OtrasActividades(navController: NavController) {
             }
         } else if (errorMessage.value != null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-<<<<<<< Updated upstream
-                Text(text = errorMessage.value ?: "Unknown error", color = Color.Red)
-=======
                 Text(text = errorMessage.value ?: "Error desconocido", color = Color.Red)
->>>>>>> Stashed changes
             }
         } else {
             LazyRow(modifier = Modifier.fillMaxWidth()) {
                 items(actividades.size) { index ->
                     val actividad = actividades[index]
-<<<<<<< Updated upstream
-                    Card(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .width(150.dp)
-                            .height(100.dp)
-                            .clickable {
-                                // Navegar a otra pantalla con la información de la actividad
-                                navController.navigate("detalle_actividad_screen/${actividad.id}")
-                            },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant) // Card color
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = actividad.titulo,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary,
-                                modifier = Modifier.padding(bottom = 8.dp),
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-=======
                     // Usamos el componente ActivityCardItem
                     ActivityCardItem(
                         activityName = actividad.titulo,
@@ -481,7 +329,6 @@ fun OtrasActividades(navController: NavController) {
                         index = actividad.id, // Usamos el ID para navegar a la pantalla de detalles
                         navController = navController
                     )
->>>>>>> Stashed changes
                 }
             }
         }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -137,6 +138,18 @@ fun ContentDetailView(navController: NavController) {
         withContext(Dispatchers.IO) {
             try {
                 val response = RetrofitClient.instance.getActividades().execute()
+                if (response.code() == 500) {
+                    Log.e("HomeView", "Internal Server Error: ${response.code()}")
+                    errorMessage.value = "Internal Server Error. Please try again later."
+                } else {
+                    Log.e("HomeView", "Response: ${response.code()}")
+                    if (response.isSuccessful) {
+                        val approvedActivities = response.body() ?: emptyList()
+                        activities.addAll(approvedActivities)
+                    } else {
+                        errorMessage.value = "Error: ${response.code()}"
+                    }
+                }
                 if (response.isSuccessful) {
                     val approvedActivities = response.body() ?: emptyList()
                     activities.addAll(approvedActivities)
@@ -306,16 +319,6 @@ fun CalendarView() {
 }
 
 @Composable
-<<<<<<< Updated upstream
-fun ActivityCardItem(activityName: String, activityDate: String, activityStatus: String, index: Int, navController: NavController) {
-    val iconColor = when (activityStatus) {
-        "APROBADA" -> Color(0xFF69A269) // Verde
-        "REALIZADA" -> Color(0xFFC8CC4A) // Azul
-        "CANCELADA" -> Color(0xFFA86767) // Rojo
-        else -> Color.Gray
-    }
-
-=======
 fun ActivityCardItem(
     activityName: String,
     activityDate: String,
@@ -332,7 +335,6 @@ fun ActivityCardItem(
     }
 
     // Card con sombra
->>>>>>> Stashed changes
     Card(
         modifier = Modifier
             .padding(8.dp)
@@ -341,19 +343,12 @@ fun ActivityCardItem(
             .clickable {
                 // Navegar a otra pantalla con la información de la actividad
                 navController.navigate("detalle_actividad_screen/${index}")
-<<<<<<< Updated upstream
-            },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant // Color de fondo para las tarjetas
-        )
-=======
             }
             .shadow(8.dp, RoundedCornerShape(8.dp)), // Sombra debajo de la tarjeta
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant // Color de fondo para las tarjetas
         ),
         shape = RoundedCornerShape(8.dp) // Bordes redondeados para la card
->>>>>>> Stashed changes
     ) {
         Column(
             modifier = Modifier
@@ -361,9 +356,6 @@ fun ActivityCardItem(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Título de la actividad
-<<<<<<< Updated upstream
-            Text(activityName, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis,)
-=======
             Text(
                 activityName,
                 color = TextPrimary,
@@ -372,20 +364,9 @@ fun ActivityCardItem(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
->>>>>>> Stashed changes
-
             // Fecha y hora
             Text(activityDate, color = TextPrimary, fontSize = 14.sp)
 
-<<<<<<< Updated upstream
-            // Íconos o imágenes para representar la actividad
-            Icon(
-                imageVector = Icons.Filled.Star,
-                contentDescription = "Evento",
-                tint = iconColor,
-                modifier = Modifier.size(30.dp)
-            )
-=======
             // Íconos o imágenes para representar el estado de la actividad
             when (activityStatus) {
                 "PENDIENTE" -> {
@@ -422,7 +403,6 @@ fun ActivityCardItem(
                     )
                 }
             }
->>>>>>> Stashed changes
         }
     }
 }
