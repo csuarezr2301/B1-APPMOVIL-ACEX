@@ -41,7 +41,7 @@ fun NavManager(navController: NavHostController, isDarkMode: Boolean, onThemeCha
 
         // Pantalla de localización (Mapa)
         composable("maps") {
-            LocalizacionView(navController)
+            LocalizacionView(navController, isDarkMode)
         }
 
         // Pantalla de ajustes y perfil
