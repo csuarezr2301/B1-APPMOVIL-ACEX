@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.acexproyecto.R
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.example.acexproyecto.ui.theme.*
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
@@ -32,17 +33,15 @@ fun LocalizacionView(navController: NavController, isDarkMode: Boolean) {
         lightColorScheme()
     }
 
-    MaterialTheme(colorScheme = colors) {
-        Scaffold(
-            topBar = { TopBar(navController) }, // Barra superior con el logo
+    Scaffold(
+        topBar = { TopBar(navController) }, // Barra superior con el logo
 
-            content = { paddingValues ->
-                // Pasamos los valores de padding a la vista del mapa para que no quede debajo de la barra inferior
-                LocalView(modifier = Modifier.padding(paddingValues), isDarkTheme = isDarkTheme)
-            },
-            bottomBar = { BottomDetailBar(navController) }
-        )
-    }
+        content = { paddingValues ->
+            // Pasamos los valores de padding a la vista del mapa para que no quede debajo de la barra inferior
+            LocalView(modifier = Modifier.padding(paddingValues),
+                isDarkTheme = isDarkTheme) },
+        bottomBar = { BottomDetailBar(navController) }
+    )
 }
 
 @Composable
