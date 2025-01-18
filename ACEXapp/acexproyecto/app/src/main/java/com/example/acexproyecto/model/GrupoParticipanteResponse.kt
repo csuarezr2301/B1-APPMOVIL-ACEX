@@ -6,6 +6,6 @@ data class GrupoParticipanteResponse(
     val id: Int,
     val actividades: ActividadResponse,
     val grupo: GrupoResponse,
-    val numParticipantes: Int,
+    var numParticipantes: Int,
     val comentario: String?
 )

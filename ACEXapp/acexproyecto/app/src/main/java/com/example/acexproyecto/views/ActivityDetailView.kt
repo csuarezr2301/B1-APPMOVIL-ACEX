@@ -58,6 +58,11 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.TextStyle
@@ -73,9 +78,11 @@ import retrofit2.Response
 @Composable
 fun ActivityDetailView(navController: NavController, activityId: String) {
     var activity by remember { mutableStateOf<ActividadResponse?>(null) }
+    var allGrupos by remember { mutableStateOf<List<GrupoResponse>>(emptyList()) }
     var numeroAlumnos by remember { mutableStateOf(0) }
     var grupoParticipantes by remember { mutableStateOf<List<GrupoParticipanteResponse>>(emptyList()) }
     var profAsistentes by remember { mutableStateOf<List<ProfesorParticipanteResponse>>(emptyList()) }
+    var isDataChanged by remember { mutableStateOf(false) }
 
     LaunchedEffect(activityId) {
         withContext(Dispatchers.IO) {
@@ -96,6 +103,10 @@ fun ActivityDetailView(navController: NavController, activityId: String) {
                 if (responseAsistentes.isSuccessful) {
                     profAsistentes = responseAsistentes.body()?.filter { it.actividad.id == activityId.toInt() } ?: emptyList()
                 }
+                val responseAllGrupos = RetrofitClient.instance.getGrupos().execute()
+                if (responseAllGrupos.isSuccessful) {
+                    allGrupos = responseAllGrupos.body() ?: emptyList()
+                }
             } catch (e: Exception) {
                 Log.e("ActivityDetailView", "Error fetching activity details", e)
             }
@@ -112,8 +123,17 @@ fun ActivityDetailView(navController: NavController, activityId: String) {
                 actividad = activity,
                 numAlumnos = numeroAlumnos,
                 gruposParticipantes = grupoParticipantes,
-                profAsistentes = profAsistentes
+                profAsistentes = profAsistentes,
+                onDataChanged = { isDataChanged = it },
+                allGrupos = allGrupos
             )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(paddingValues)
+            ) {
+                BotonGuardar(isEnabled = isDataChanged)
+            }
         },
         bottomBar = { BottomDetailBar(navController) }
     )
@@ -122,7 +142,7 @@ fun ActivityDetailView(navController: NavController, activityId: String) {
 
 
 @Composable
-fun ActivityDetailContent(navController: NavController, modifier: Modifier = Modifier, actividad : ActividadResponse?, numAlumnos: Int, gruposParticipantes: List<GrupoParticipanteResponse>, profAsistentes: List<ProfesorParticipanteResponse>) {
+fun ActivityDetailContent(navController: NavController, modifier: Modifier = Modifier, actividad : ActividadResponse?, numAlumnos: Int, gruposParticipantes: List<GrupoParticipanteResponse>, profAsistentes: List<ProfesorParticipanteResponse>, onDataChanged: (Boolean) -> Unit, allGrupos: List<GrupoResponse>) {
     var activityName by remember { mutableStateOf("Nombre de la actividad") }
     var activityDescription by remember { mutableStateOf("Descripción de la actividad. Aquí va la información detallada sobre la actividad, los objetivos y lo que ofrece.") }
     var isDialogVisible by remember { mutableStateOf(false) }
@@ -144,7 +164,7 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
             .padding(16.dp)
     ) {
         item {
-            BotonGuardar()
+            //BotonGuardar(isEnabled = isDataChanged)
         }
         item {
             // Nombre de la actividad con icono para editar
@@ -255,8 +275,8 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
                     .fillMaxWidth()
             ) {
                 var activity by remember { mutableStateOf<ActividadResponse?>(null) }
-                AlumnosAsistentes(numAlumnos, gruposParticipantes)
-                ProfesoresAsistentes(profAsistentes)
+                AlumnosAsistentes(gruposParticipantes, onDataChanged, allGrupos, actividad)
+                actividad?.let { ProfesoresAsistentes(profAsistentes, actividad, onDataChanged) }
                 Spacer(modifier = Modifier.height(15.dp))
                 Observaciones(actividad = activity)
             }
@@ -325,9 +345,20 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
 
 
 @Composable
-fun AlumnosAsistentes(numAlumnos: Int, gruposParticipantes: List<GrupoParticipanteResponse>) {
-    var isDialogVisible by remember { mutableStateOf(false) }
-    //var numeroAlumnos by remember { mutableStateOf("10") }
+fun AlumnosAsistentes(gruposParticipantes: List<GrupoParticipanteResponse>, onDataChanged: (Boolean) -> Unit, allGrupos: List<GrupoResponse>, actividad : ActividadResponse? ) {
+    var currentlyEditingId by remember { mutableStateOf<Int?>(null) }
+    var totalParticipantes by remember { mutableStateOf(0) }
+    var exNumParticipantes by remember { mutableStateOf(0) }
+    var isPopupVisible by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedGrupos by remember { mutableStateOf(setOf<String>()) }
+    var asistentes by remember { mutableStateOf(gruposParticipantes) }
+
+
+    LaunchedEffect(gruposParticipantes) {
+        asistentes = gruposParticipantes
+        selectedGrupos = gruposParticipantes.map { "${it.grupo}" }.toSet()
+    }
 
     // Fila para Alumnos Asistentes
     Row(
@@ -339,43 +370,93 @@ fun AlumnosAsistentes(numAlumnos: Int, gruposParticipantes: List<GrupoParticipan
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(0.6f)
         )
+        Spacer(modifier = Modifier.weight(0.2f))
         Text(
-            text = numAlumnos.toString(),
+            text = totalParticipantes.toString(),
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary,
-            modifier = Modifier.weight(0.5f)
+            modifier = Modifier
+                .weight(0.15f)
         )
-        IconButton(onClick = { isDialogVisible = true }) {
+        IconButton(onClick = { isPopupVisible = true }) {
             Icon(
-                imageVector = Icons.Filled.Edit,
-                contentDescription = "Editar",
-                tint = TextPrimary
+                imageVector = Icons.Default.Add,
+                contentDescription = "Add Group",
+                tint = TextPrimary,
+                modifier = Modifier.weight(0.05f)
             )
         }
     }
 
     Spacer(modifier = Modifier.height(8.dp))
 
-    gruposParticipantes.forEach { grupoParticipante ->
+    asistentes.forEach { grupoParticipante ->
+        var editedNumParticipantes by remember { mutableStateOf(grupoParticipante.numParticipantes.toString()) }
+        val isEditing = currentlyEditingId == grupoParticipante.id
+
+        LaunchedEffect(editedNumParticipantes) {
+            totalParticipantes = gruposParticipantes.sumOf { it.numParticipantes }
+        }
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
+            IconButton(onClick = {
+                asistentes = asistentes.filterNot { it.id == grupoParticipante.id }
+                onDataChanged(true)
+            }) {
+                Icon(
+                    imageVector = Icons.Default.Clear,
+                    contentDescription = "Quitar Group",
+                    tint = TextPrimary,
+                    modifier = Modifier.weight(0.05f)
+                )
+            }
             Text(
                 text = grupoParticipante.grupo.codGrupo,
                 fontSize = 16.sp,
                 color = TextPrimary,
                 modifier = Modifier.weight(1f)
             )
-            Text(
-                text = grupoParticipante.numParticipantes.toString(),
-                fontSize = 16.sp,
-                color = TextPrimary,
-                modifier = Modifier.weight(0.15f)
-            )
+            if (isEditing) {
+                BasicTextField(
+                    value = editedNumParticipantes,
+                    onValueChange = { newValue ->
+                        editedNumParticipantes = newValue
+                        grupoParticipante.numParticipantes = newValue.toIntOrNull() ?: 0
+                    },
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                    textStyle = TextStyle(fontSize = 16.sp, lineHeight = 20.sp),
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier
+                                .width(60.dp)
+                                .height(40.dp)
+                                .background(Color.White)
+                                .padding(4.dp)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            innerTextField()
+                        }
+                    },
+                    modifier = Modifier
+                        .width(60.dp)
+                        .height(40.dp),
+                    singleLine = true
+                )
+            } else {
+                Text(
+                    text = grupoParticipante.numParticipantes.toString(),
+                    fontSize = 16.sp,
+                    color = TextPrimary,
+                    modifier = Modifier.weight(0.15f)
+                )
+            }
             Text(
                 text = "/",
                 fontSize = 16.sp,
@@ -388,37 +469,127 @@ fun AlumnosAsistentes(numAlumnos: Int, gruposParticipantes: List<GrupoParticipan
                 color = TextPrimary,
                 modifier = Modifier.weight(0.15f)
             )
+            IconButton(onClick = {
+                if (isEditing) {
+                    if (exNumParticipantes.toString() != editedNumParticipantes) {
+                        onDataChanged(true)
+                    }
+                    currentlyEditingId = null
+                } else {
+                    exNumParticipantes = grupoParticipante.numParticipantes
+                    currentlyEditingId = grupoParticipante.id
+                }
+            }) {
+                Icon(
+                    imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
+                    contentDescription = if (isEditing) "Confirm" else "Edit",
+                    tint = TextPrimary
+                )
+            }
         }
     }
 
-    Spacer(modifier = Modifier.height(8.dp))
+    val filteredGrupos = allGrupos.filter {
+        it.codGrupo.contains(searchQuery, ignoreCase = true)
+    }
 
-    // Diálogo para editar número de alumnos
-    if (isDialogVisible) {
+    if (isPopupVisible) {
         AlertDialog(
-            onDismissRequest = { isDialogVisible = false },
-            title = { Text(text = "Editar número de alumnos") },
+            onDismissRequest = { isPopupVisible = false },
+            title = { Text("Seleccionar Profesores") },
             text = {
-                TextField(
-                    value = numAlumnos.toString(),
-                    onValueChange = {},
-                    //{ numAlumnos = it },
-                    label = { Text("Número de alumnos") },
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    TextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        label = { Text("Buscar Grupo") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (filteredGrupos.isNotEmpty()) {
+                        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                            items(filteredGrupos) { grupos ->
+                                val codigo = "${grupos.codGrupo}"
+                                val isSelected = selectedGrupos.contains(codigo)
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            selectedGrupos = if (isSelected) {
+                                                selectedGrupos - codigo
+                                            } else {
+                                                selectedGrupos + codigo
+                                            }
+                                        }
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = isSelected,
+                                        onCheckedChange = { checked ->
+                                            selectedGrupos = if (checked) {
+                                                selectedGrupos + codigo
+                                            } else {
+                                                selectedGrupos - codigo
+                                            }
+                                        }
+                                    )
+
+                                    Text(
+                                        text = codigo,
+                                        fontSize = 16.sp,
+                                        modifier = Modifier.padding(start = 16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Text(
+                            text = "No se encontraron resultados para la búsqueda.",
+                            color = Color.Gray,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                }
             },
             confirmButton = {
                 Button(
-                    onClick = { isDialogVisible = false }
+                    onClick = {
+                        val updatedGruposAsistentes = allGrupos.filter {
+                            selectedGrupos.contains("${it.codGrupo}")
+                        }.map { grupos ->
+                            (gruposParticipantes.firstOrNull()?.actividades?.id ?: actividad)?.let {
+                                actividad?.let { it1 ->
+                                    GrupoParticipanteResponse(
+                                        id = it1.id,
+                                        actividades = it1,
+                                        grupo = grupos,
+                                        numParticipantes = grupos.numAlumnos,
+                                        comentario = it1.comentarios
+                                    )
+                                }
+                            }
+                        }.filterNotNull()
+
+                        if (!areGruposEqual(updatedGruposAsistentes, asistentes)) {
+                            asistentes = updatedGruposAsistentes
+                            onDataChanged(true)
+                        }
+
+                        Log.d("AlumnosAsistentes", "gruposParticipantes: $asistentes")
+                        Log.e("AlumnosAsistentes", "updatedGruposAsistentes: $updatedGruposAsistentes")
+
+                        isPopupVisible = false
+                    }
                 ) {
-                    Text("Confirmar")
+                    Text("Guardar")
                 }
             },
             dismissButton = {
-                Button(
-                    onClick = { isDialogVisible = false }
-                ) {
+                Button(onClick = { isPopupVisible = false }) {
                     Text("Cancelar")
                 }
             }
@@ -427,39 +598,38 @@ fun AlumnosAsistentes(numAlumnos: Int, gruposParticipantes: List<GrupoParticipan
 }
 
 @Composable
-fun ProfesoresAsistentes(profAsistentes: List<ProfesorParticipanteResponse>) {
-    // Estado para los profesores generales, profesores asistentes y sus estados de carga
+fun ProfesoresAsistentes(profAsistentes: List<ProfesorParticipanteResponse>, actividad : ActividadResponse?, onDataChanged: (Boolean) -> Unit) {
     var profesoresLista by remember { mutableStateOf<List<ProfesorResponse>>(emptyList()) }
     var isLoadingProfesores by remember { mutableStateOf(true) }
     var isLoadingAsistentes by remember { mutableStateOf(true) }
 
-    // Estado para la búsqueda y los profesores seleccionados (asociados a la actividad)
     var searchQuery by remember { mutableStateOf("") }
     var selectedProfesores by remember { mutableStateOf(setOf<String>()) }
     var isDialogVisible by remember { mutableStateOf(false) }
 
+    var asistentes by remember { mutableStateOf(profAsistentes) }
+
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Llamada a la API para obtener los datos de los profesores y los asistentes
+    LaunchedEffect(profAsistentes) {
+        asistentes = profAsistentes
+        selectedProfesores = profAsistentes.map { "${it.profesor.nombre} ${it.profesor.apellidos}" }.toSet()
+    }
+
     LaunchedEffect(Unit) {
-        Log.d("ProfesoresAsistentes", "${profAsistentes.size}")
-        // Ejecutamos las llamadas a la API en el Dispatcher.IO para evitar el error de red en el hilo principal
         try {
             withContext(Dispatchers.IO) {
-                // Llamada a la API para obtener la lista de profesores
-                val responseProfesores: Response<List<ProfesorResponse>> = RetrofitClient.instance.getProfesores().execute()
+                val responseProfesores: Response<List<ProfesorResponse>> =
+                    RetrofitClient.instance.getProfesores().execute()
                 if (responseProfesores.isSuccessful) {
                     profesoresLista = responseProfesores.body() ?: emptyList()
-                    Log.d("ProfesoresAsistentes", "Profesores obtenidos: ${profesoresLista.size}")
                 } else {
                     errorMessage = "Error al obtener la lista de profesores: ${responseProfesores.errorBody()}"
                 }
             }
         } catch (e: Exception) {
             errorMessage = "Error al hacer la llamada a la API: ${e.message}"
-            Log.e("ProfesoresAsistentes", "Error al hacer la llamada a la API", e)
         } finally {
-            // Finalmente, actualizamos los estados de carga en el hilo principal
             withContext(Dispatchers.Main) {
                 isLoadingProfesores = false
                 isLoadingAsistentes = false
@@ -467,12 +637,10 @@ fun ProfesoresAsistentes(profAsistentes: List<ProfesorParticipanteResponse>) {
         }
     }
 
-    // Filtrar la lista de profesores generales según la búsqueda
     val filteredProfesores = profesoresLista.filter {
         it.nombre.contains(searchQuery, ignoreCase = true) || it.apellidos.contains(searchQuery, ignoreCase = true)
     }
 
-    // Fila para Profesores Asistentes
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -494,11 +662,9 @@ fun ProfesoresAsistentes(profAsistentes: List<ProfesorParticipanteResponse>) {
             }
         }
 
-        // Mostrar la lista de profesores de la actividad debajo del título
-        if (profAsistentes.isNotEmpty()) {
+        if (asistentes.isNotEmpty()) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                profAsistentes.forEach { profesor ->
-                    // Mostrar nombre y apellido de los profesores
+                asistentes?.forEach { profesor ->
                     Text(
                         text = "${profesor.profesor.nombre} ${profesor.profesor.apellidos}",
                         fontSize = 16.sp,
@@ -508,7 +674,6 @@ fun ProfesoresAsistentes(profAsistentes: List<ProfesorParticipanteResponse>) {
                 }
             }
         } else {
-            // Si no hay profesores asignados, mostrar un mensaje
             Text(
                 text = "No hay profesores asignados.",
                 fontSize = 16.sp,
@@ -520,36 +685,31 @@ fun ProfesoresAsistentes(profAsistentes: List<ProfesorParticipanteResponse>) {
         Spacer(modifier = Modifier.height(8.dp))
     }
 
-    // Mostrar el popup con la lista de profesores
     if (isDialogVisible) {
         AlertDialog(
             onDismissRequest = { isDialogVisible = false },
             title = { Text("Seleccionar Profesores") },
             text = {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    // Barra de búsqueda
                     TextField(
                         value = searchQuery,
-                        onValueChange = { searchQuery = it }, // 'it' hace referencia al nuevo valor de searchQuery
+                        onValueChange = { searchQuery = it },
                         label = { Text("Buscar Profesor") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Mostrar lista de profesores filtrados
                     if (filteredProfesores.isNotEmpty()) {
                         LazyColumn(modifier = Modifier.fillMaxWidth()) {
                             items(filteredProfesores) { profesor ->
                                 val nombreCompleto = "${profesor.nombre} ${profesor.apellidos}"
                                 val isSelected = selectedProfesores.contains(nombreCompleto)
 
-                                // Caja de selección (Checkbox) dentro de cada ítem
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            // Alternar entre agregar o quitar el profesor de la lista de seleccionados
                                             selectedProfesores = if (isSelected) {
                                                 selectedProfesores - nombreCompleto
                                             } else {
@@ -570,7 +730,6 @@ fun ProfesoresAsistentes(profAsistentes: List<ProfesorParticipanteResponse>) {
                                         }
                                     )
 
-                                    // Mostrar el nombre completo del profesor
                                     Text(
                                         text = nombreCompleto,
                                         fontSize = 16.sp,
@@ -591,7 +750,29 @@ fun ProfesoresAsistentes(profAsistentes: List<ProfesorParticipanteResponse>) {
             confirmButton = {
                 Button(
                     onClick = {
-                        // Guardar la lista de seleccionados
+                        val updatedProfAsistentes = profesoresLista.filter {
+                            selectedProfesores.contains("${it.nombre} ${it.apellidos}")
+                        }.map { profesor ->
+                            (profAsistentes.firstOrNull()?.actividad ?: actividad)?.let {
+                                actividad?.let { it1 ->
+                                    ProfesorParticipanteResponse(
+                                        id = it1.id,
+                                        profesor = profesor,
+                                        actividad = it
+                                    )
+                                }
+                            }
+                        }.filterNotNull()
+
+                        if (!areProfessorsEqual(updatedProfAsistentes, asistentes)) {
+                            asistentes = updatedProfAsistentes
+                            onDataChanged(true)
+                        }
+                        if (selectedProfesores.isNotEmpty() && asistentes.isEmpty()) {
+                            asistentes = updatedProfAsistentes
+                            onDataChanged(true)
+                        }
+                        
                         isDialogVisible = false
                     }
                 ) {
@@ -607,7 +788,23 @@ fun ProfesoresAsistentes(profAsistentes: List<ProfesorParticipanteResponse>) {
     }
 }
 
+fun areProfessorsEqual(
+    list1: List<ProfesorParticipanteResponse>,
+    list2: List<ProfesorParticipanteResponse>
+): Boolean {
+    val professors1 = list1.map { it.profesor }
+    val professors2 = list2.map { it.profesor }
+    return professors1.containsAll(professors2) && professors2.containsAll(professors1)
+}
 
+fun areGruposEqual(
+    list1: List<GrupoParticipanteResponse>,
+    list2: List<GrupoParticipanteResponse>
+): Boolean {
+    val grupo1 = list1.map { it.grupo }
+    val grupo2 = list2.map { it.grupo }
+    return grupo1.containsAll(grupo2) && grupo2.containsAll(grupo1)
+}
 
 @Composable
 fun Observaciones(actividad : ActividadResponse?) {
@@ -626,13 +823,6 @@ fun Observaciones(actividad : ActividadResponse?) {
             color = TextPrimary,
             modifier = Modifier.weight(1f)
         )
-        IconButton(onClick = { isDialogVisible = true }) {
-            Icon(
-                imageVector = Icons.Filled.Edit,
-                contentDescription = "Editar",
-                tint = TextPrimary
-            )
-        }
     }
     Text(
         text = actividad?.incidencias ?: "No hay Observaciones e Incidencias",
@@ -783,9 +973,9 @@ fun PopupMenu(
 }
 
 @Composable
-fun BotonGuardar() {
+fun BotonGuardar(isEnabled: Boolean) {
     Row(
-        modifier = Modifier.fillMaxWidth(), // Hace que el Row ocupe todo el ancho disponible
+        modifier = Modifier.fillMaxWidth(). padding(top = 12.dp, end = 12.dp), // Hace que el Row ocupe todo el ancho disponible
         horizontalArrangement = Arrangement.End, // Alinea el contenido (el botón) a la derecha
         verticalAlignment = Alignment.CenterVertically // Opcional: centra el botón verticalmente
     ) {
@@ -793,8 +983,9 @@ fun BotonGuardar() {
             onClick = {
                 // Acción al presionar el botón
             },
+            enabled = isEnabled, // Habilita o deshabilita el botón
             colors = ButtonDefaults.buttonColors(
-                containerColor = ButtonPrimary , // Cambia el color de fondo del botón
+                containerColor = ButtonPrimary, // Cambia el color de fondo del botón
                 contentColor = TextPrimary // Cambia el color del texto
             )
         ) {

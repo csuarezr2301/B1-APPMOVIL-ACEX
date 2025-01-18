@@ -1,6 +1,7 @@
 package com.example.appacex.model
 
 import com.example.acexproyecto.model.GrupoParticipanteResponse
+import com.example.acexproyecto.model.GrupoResponse
 import org.simpleframework.xml.Path
 import retrofit2.Call
 import retrofit2.http.GET
@@ -17,5 +18,8 @@ interface ApiService {
 
     @GET("api/profParticipante")
     fun getProfesoresparticipantes(): Call<List<ProfesorParticipanteResponse>>
+
+    @GET("api/grupo")
+    fun getGrupos(): Call<List<GrupoResponse>>
 }
 
