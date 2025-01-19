@@ -1,9 +1,8 @@
 package com.example.acexproyecto.views
 
-import android.annotation.SuppressLint
-import android.app.Activity
+import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,12 +12,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -27,11 +28,14 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.acexproyecto.R
 import com.example.acexproyecto.objetos.Usuario
+import com.example.acexproyecto.ui.theme.TextPrimary
 import com.example.appacex.model.ActividadResponse
 import com.example.appacex.model.RetrofitClient
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
@@ -41,6 +45,22 @@ fun ChatView(
     navController: NavController,
     activityId: String,
 ) {
+    val userColors = remember { mutableStateMapOf<String, Color>() }
+    val colors = listOf(
+        Color(0xFF6A5ACD), // SlateBlue
+        Color(0xFF4682B4), // SteelBlue
+        Color(0xFF708090), // SlateGray
+        Color(0xFF556B2F), // DarkOliveGreen
+        Color(0xFF8B4513), // SaddleBrown
+        Color(0xFF2F4F4F), // DarkSlateGray
+        Color(0xFF4B0082), // Indigo
+        Color(0xFF800000), // Maroon
+        Color(0xFF483D8B), // DarkSlateBlue
+        Color(0xFF2E8B57), // SeaGreen
+        Color(0xFF3CB371), // MediumSeaGreen
+        Color(0xFF8B0000)  // DarkRed
+    )
+
     var showProfessorDialog by remember { mutableStateOf(false) }
     var activity by remember { mutableStateOf<ActividadResponse?>(null) }
 
@@ -98,7 +118,7 @@ fun ChatView(
                         }
                     }
                 }
-                ChatScreen(activityId, Usuario.displayName)
+                ChatScreen(activityId, Usuario.displayName, userColors, colors)
             }
         },
         bottomBar = { BottomDetailBar(navController) }, // Barra inferior
@@ -125,59 +145,123 @@ fun ChatView(
 }
 
 @Composable
-fun ChatScreen(activityId: String, displayName: String?) {
+fun ChatScreen(
+    activityId: String,
+    displayName: String?,
+    userColors: MutableMap<String, Color>,
+    colors: List<Color>
+) {
+    val context = LocalContext.current
     val messages = remember { mutableStateListOf<Message>() }
     val listState = rememberLazyListState()
     var message by remember { mutableStateOf("") }
+    var lastReadMessageIndex by rememberSaveable { mutableStateOf(getLastReadMessageIndex(context, activityId)) }
+    var unreadMessagesCount by remember { mutableStateOf(0) }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(activityId) {
         fetchMessages(activityId) { fetchedMessages ->
             messages.clear()
             messages.addAll(fetchedMessages)
+            lastReadMessageIndex = getLastReadMessageIndex(context, activityId).coerceAtLeast(0)
+            unreadMessagesCount = messages.size - lastReadMessageIndex - 1
+            coroutineScope.launch {
+                listState.scrollToItem(lastReadMessageIndex)
+            }
         }
         observeMessages(activityId) { updatedMessages ->
             messages.clear()
             messages.addAll(updatedMessages)
+            unreadMessagesCount = updatedMessages.size - lastReadMessageIndex - 1
         }
     }
 
-    // Scroll to the bottom when new messages are loaded
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
-            listState.scrollToItem(messages.size - 1)
+            coroutineScope.launch {
+                listState.scrollToItem(lastReadMessageIndex.coerceAtLeast(0))
+            }
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.weight(1f)
-        ) {
-            items(messages) { msg ->
-                MessageBubble(message = msg, isOwnMessage = msg.sender == displayName)
+    LaunchedEffect(listState.firstVisibleItemIndex) {
+        if (listState.firstVisibleItemIndex + listState.layoutInfo.visibleItemsInfo.size >= messages.size) {
+            coroutineScope.launch {
+                delay(5000)
+                lastReadMessageIndex = messages.size - 1
+                if (lastReadMessageIndex >= 0) {
+                    saveLastReadMessageIndex(context, activityId, lastReadMessageIndex)
+                    unreadMessagesCount = 0
+                }
             }
         }
-        Row(modifier = Modifier.padding(8.dp)) {
-            TextField(
-                value = message,
-                onValueChange = { message = it },
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            saveLastReadMessageIndex(context, activityId, lastReadMessageIndex)
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            LazyColumn(
+                state = listState,
                 modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = {
-                if (message.isNotEmpty()) {
-                    sendMessage(activityId, Message(sender = displayName ?: "Unknown", content = message, timestamp = System.currentTimeMillis()))
-                    message = ""
+            ) {
+                items(messages) { msg ->
+                    MessageBubble(message = msg, isOwnMessage = msg.sender == displayName, userColors = userColors, colors = colors)
+                    if (messages.indexOf(msg) == lastReadMessageIndex && unreadMessagesCount > 0) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFADD8E6).copy(alpha = 0.5f), shape = RoundedCornerShape(8.dp))
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Mensajes no leidos: $unreadMessagesCount",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                    }
                 }
-            }) {
-                Text("Enviar")
+            }
+            Row(modifier = Modifier.padding(8.dp)) {
+                TextField(
+                    value = message,
+                    onValueChange = { message = it },
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = {
+                    if (message.isNotEmpty()) {
+                        sendMessage(activityId, Message(sender = displayName ?: "Unknown", content = message, timestamp = System.currentTimeMillis()))
+                        message = ""
+                    }
+                }) {
+                    Text("Enviar")
+                }
             }
         }
     }
 }
 
 @Composable
-fun MessageBubble(message: Message, isOwnMessage: Boolean) {
+fun MessageBubble(
+    message: Message,
+    isOwnMessage: Boolean,
+    userColors: MutableMap<String, Color>,
+    colors: List<Color>
+) {
+    val color = userColors.getOrPut(message.sender) {
+        colors[userColors.size % colors.size]
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -193,13 +277,14 @@ fun MessageBubble(message: Message, isOwnMessage: Boolean) {
             Text(
                 text = message.sender,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (isOwnMessage) Color.Blue else Color.Red,
+                fontWeight = FontWeight.Bold,
+                color = color,
                 modifier = Modifier.padding(bottom = 5.dp)
             )
             Text(
                 text = message.content,
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.Black
+                color = TextPrimary,
             )
             Text(
                 text = formatTimestamp(message.timestamp),
@@ -284,6 +369,26 @@ fun formatTimestamp(timestamp: Long): String {
     } else {
         SimpleDateFormat("dd/MM - HH:mm", Locale.getDefault()).format(messageDate)
     }
+}
+
+fun saveLastReadMessageIndex(context: Context, activityId: String, index: Int) {
+    if (index >= 0) {
+        val sharedPreferences: SharedPreferences = context.getSharedPreferences("ChatPrefs", Context.MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            putInt("lastReadMessageIndex_$activityId", index)
+            apply()
+        }
+        Log.d("ChatView", "Saved lastReadMessageIndex: $index for activityId: $activityId")
+    } else {
+        Log.e("ChatView", "Attempted to save invalid lastReadMessageIndex: $index for activityId: $activityId")
+    }
+}
+
+fun getLastReadMessageIndex(context: Context, activityId: String): Int {
+    val sharedPreferences: SharedPreferences = context.getSharedPreferences("ChatPrefs", Context.MODE_PRIVATE)
+    val index = sharedPreferences.getInt("lastReadMessageIndex_$activityId", 0)
+    Log.d("ChatView", "Retrieved lastReadMessageIndex: $index for activityId: $activityId")
+    return if (index >= 0) index else 0
 }
 
 data class Message(
