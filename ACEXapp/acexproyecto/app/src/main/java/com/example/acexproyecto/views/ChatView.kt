@@ -214,7 +214,7 @@ fun ChatScreen(
             ) {
                 items(messages) { msg ->
                     MessageBubble(message = msg, isOwnMessage = msg.sender == displayName, userColors = userColors, colors = colors)
-                    if (messages.indexOf(msg) == lastReadMessageIndex && unreadMessagesCount > 0) {
+                    if (messages.indexOf(msg) == lastReadMessageIndex && unreadMessagesCount > 0 && msg.sender != displayName) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -223,7 +223,7 @@ fun ChatScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Mensajes no leidos: $unreadMessagesCount",
+                                text = "Unread messages: $unreadMessagesCount",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.Gray
                             )
@@ -244,7 +244,7 @@ fun ChatScreen(
                         message = ""
                     }
                 }) {
-                    Text("Enviar")
+                    Text("Send")
                 }
             }
         }
