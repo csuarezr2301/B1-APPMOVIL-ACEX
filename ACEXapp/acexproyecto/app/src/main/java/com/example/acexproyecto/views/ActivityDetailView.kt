@@ -113,7 +113,6 @@ fun ActivityDetailView(navController: NavController, activityId: String) {
         }
     }
 
-    //cambiar la top bar para añadir el boton de regreso
     Scaffold(
         topBar = { TopBar(navController) },
         content = { paddingValues ->
@@ -121,7 +120,6 @@ fun ActivityDetailView(navController: NavController, activityId: String) {
                 navController = navController,
                 modifier = Modifier.padding(paddingValues),
                 actividad = activity,
-                numAlumnos = numeroAlumnos,
                 gruposParticipantes = grupoParticipantes,
                 profAsistentes = profAsistentes,
                 onDataChanged = { isDataChanged = it },
@@ -140,9 +138,9 @@ fun ActivityDetailView(navController: NavController, activityId: String) {
 }
 
 
-
 @Composable
-fun ActivityDetailContent(navController: NavController, modifier: Modifier = Modifier, actividad : ActividadResponse?, numAlumnos: Int, gruposParticipantes: List<GrupoParticipanteResponse>, profAsistentes: List<ProfesorParticipanteResponse>, onDataChanged: (Boolean) -> Unit, allGrupos: List<GrupoResponse>) {
+fun ActivityDetailContent(navController: NavController, modifier: Modifier = Modifier, actividad: ActividadResponse?, gruposParticipantes: List<GrupoParticipanteResponse>, profAsistentes: List<ProfesorParticipanteResponse>, onDataChanged: (Boolean) -> Unit, allGrupos: List<GrupoResponse>) {
+    var mutableActividad by remember { mutableStateOf(actividad) }
     var activityName by remember { mutableStateOf("Nombre de la actividad") }
     var activityDescription by remember { mutableStateOf("Descripción de la actividad. Aquí va la información detallada sobre la actividad, los objetivos y lo que ofrece.") }
     var isDialogVisible by remember { mutableStateOf(false) }
@@ -158,16 +156,16 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
     var isPopupVisible by remember { mutableStateOf(false) }
     var isCameraVisible by remember { mutableStateOf(false) }
 
+    LaunchedEffect(actividad) {
+        mutableActividad = actividad
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
         item {
-            //BotonGuardar(isEnabled = isDataChanged)
-        }
-        item {
-            // Nombre de la actividad con icono para editar
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -189,6 +187,7 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(4.dp))
         }
 
         item {
@@ -263,22 +262,27 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
                     Text(
                         text = actividad?.descripcion ?: "Descricion no encontrada",
                         fontSize = 16.sp,
+                        modifier = Modifier.padding(16.dp),
                         color = TextPrimary
                     )
                 }
             }
         }
-
+        ///////// ALUMNOS ASISTENTES Y PROFESORES ASISTENTES Y OBSERVACIONES
         item {
             Column (
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
-                var activity by remember { mutableStateOf<ActividadResponse?>(null) }
                 AlumnosAsistentes(gruposParticipantes, onDataChanged, allGrupos, actividad)
+                Spacer(modifier = Modifier.height(8.dp))
                 actividad?.let { ProfesoresAsistentes(profAsistentes, actividad, onDataChanged) }
                 Spacer(modifier = Modifier.height(15.dp))
-                Observaciones(actividad = activity)
+                Observaciones(actividad = mutableActividad, onUpdateActividad = { updatedActividad ->
+                    // Update the actividad state with the new values
+                    mutableActividad = updatedActividad
+                    onDataChanged(true)
+                })
             }
         }
 
@@ -301,7 +305,7 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
                     .padding(4.dp)
                     .background(Color.Gray)
             ) {
-                // Aquí se agregaría el mapa
+                MapaActividad(modifier = Modifier.fillMaxSize())
             }
         }
     }
@@ -398,7 +402,7 @@ fun AlumnosAsistentes(gruposParticipantes: List<GrupoParticipanteResponse>, onDa
         val isEditing = currentlyEditingId == grupoParticipante.id
 
         LaunchedEffect(editedNumParticipantes) {
-            totalParticipantes = gruposParticipantes.sumOf { it.numParticipantes }
+            totalParticipantes = asistentes.sumOf { it.numParticipantes }
         }
 
         Row(
@@ -406,7 +410,9 @@ fun AlumnosAsistentes(gruposParticipantes: List<GrupoParticipanteResponse>, onDa
             modifier = Modifier.fillMaxWidth()
         ) {
             IconButton(onClick = {
-                asistentes = asistentes.filterNot { it.id == grupoParticipante.id }
+                asistentes = asistentes.filterNot { it.grupo.id == grupoParticipante.grupo.id }
+                selectedGrupos = selectedGrupos - grupoParticipante.grupo.codGrupo
+                totalParticipantes = asistentes.sumOf { it.numParticipantes }
                 onDataChanged(true)
             }) {
                 Icon(
@@ -426,8 +432,11 @@ fun AlumnosAsistentes(gruposParticipantes: List<GrupoParticipanteResponse>, onDa
                 BasicTextField(
                     value = editedNumParticipantes,
                     onValueChange = { newValue ->
-                        editedNumParticipantes = newValue
-                        grupoParticipante.numParticipantes = newValue.toIntOrNull() ?: 0
+                        val newNum = newValue.toIntOrNull() ?: 0
+                        if (newNum in 0..grupoParticipante.grupo.numAlumnos) {
+                            editedNumParticipantes = newValue
+                            grupoParticipante.numParticipantes = newNum
+                        }
                     },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                     textStyle = TextStyle(fontSize = 16.sp, lineHeight = 20.sp),
@@ -496,7 +505,7 @@ fun AlumnosAsistentes(gruposParticipantes: List<GrupoParticipanteResponse>, onDa
     if (isPopupVisible) {
         AlertDialog(
             onDismissRequest = { isPopupVisible = false },
-            title = { Text("Seleccionar Profesores") },
+            title = { Text("Seleccionar Grupos") },
             text = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     TextField(
@@ -512,7 +521,7 @@ fun AlumnosAsistentes(gruposParticipantes: List<GrupoParticipanteResponse>, onDa
                         LazyColumn(modifier = Modifier.fillMaxWidth()) {
                             items(filteredGrupos) { grupos ->
                                 val codigo = "${grupos.codGrupo}"
-                                val isSelected = selectedGrupos.contains(codigo)
+                                val isSelected = selectedGrupos.contains(codigo) || gruposParticipantes.any { it.grupo.codGrupo == codigo }
 
                                 Row(
                                     modifier = Modifier
@@ -561,26 +570,29 @@ fun AlumnosAsistentes(gruposParticipantes: List<GrupoParticipanteResponse>, onDa
                         val updatedGruposAsistentes = allGrupos.filter {
                             selectedGrupos.contains("${it.codGrupo}")
                         }.map { grupos ->
-                            (gruposParticipantes.firstOrNull()?.actividades?.id ?: actividad)?.let {
-                                actividad?.let { it1 ->
-                                    GrupoParticipanteResponse(
-                                        id = it1.id,
-                                        actividades = it1,
-                                        grupo = grupos,
-                                        numParticipantes = grupos.numAlumnos,
-                                        comentario = it1.comentarios
-                                    )
-                                }
+                            actividad?.let { it1 ->
+                                GrupoParticipanteResponse(
+                                    id = it1.id,
+                                    actividades = it1,
+                                    grupo = grupos,
+                                    numParticipantes = grupos.numAlumnos,
+                                    comentario = it1.comentarios
+                                )
                             }
                         }.filterNotNull()
 
-                        if (!areGruposEqual(updatedGruposAsistentes, asistentes)) {
-                            asistentes = updatedGruposAsistentes
-                            onDataChanged(true)
+                        // Merge the new groups with the existing ones
+                        val mergedAsistentes = asistentes.toMutableList().apply {
+                            addAll(updatedGruposAsistentes.filter { newGroup ->
+                                none { it.grupo.id == newGroup.grupo.id }
+                            })
                         }
 
-                        Log.d("AlumnosAsistentes", "gruposParticipantes: $asistentes")
-                        Log.e("AlumnosAsistentes", "updatedGruposAsistentes: $updatedGruposAsistentes")
+                        if (!areGruposEqual(mergedAsistentes, asistentes)) {
+                            asistentes = mergedAsistentes
+                            totalParticipantes = asistentes.sumOf { it.numParticipantes }
+                            onDataChanged(true)
+                        }
 
                         isPopupVisible = false
                     }
@@ -807,11 +819,33 @@ fun areGruposEqual(
 }
 
 @Composable
-fun Observaciones(actividad : ActividadResponse?) {
-    var observaciones by remember { mutableStateOf(actividad?.incidencias ?: "No hay observaciones e incidencias") }
+fun Observaciones(actividad: ActividadResponse?, onUpdateActividad: (ActividadResponse) -> Unit) {
+    var transporte by remember { mutableStateOf(actividad?.comentTransporte ?: "") }
+    var alojamiento by remember { mutableStateOf(actividad?.comentAlojamiento ?: "") }
+    var comentarios by remember { mutableStateOf(actividad?.comentarios ?: "") }
+    var estado by remember { mutableStateOf(actividad?.comentEstado ?: "") }
+    var incidencias by remember { mutableStateOf(actividad?.incidencias ?: "") }
+
+    var observaciones by remember { mutableStateOf("") }
+
+    LaunchedEffect(actividad) {
+        transporte = actividad?.comentTransporte ?: ""
+        alojamiento = actividad?.comentAlojamiento ?: ""
+        comentarios = actividad?.comentarios ?: ""
+        estado = actividad?.comentEstado ?: ""
+        incidencias = actividad?.incidencias ?: ""
+
+        observaciones = listOfNotNull(
+            transporte.takeIf { it.isNotEmpty() }?.let { "Comentarios de Transporte: $it" },
+            alojamiento.takeIf { it.isNotEmpty() }?.let { "Comentarios de Alojamiento: $it" },
+            comentarios.takeIf { it.isNotEmpty() }?.let { "Comentarios: $it" },
+            estado.takeIf { it.isNotEmpty() }?.let { "Comentarios de Estado: $it" },
+            incidencias.takeIf { it.isNotEmpty() }?.let { "Incidencias: $it" }
+        ).joinToString(separator = "\n\n")
+    }
+
     var isDialogVisible by remember { mutableStateOf(false) }
 
-    // Fila para Observaciones
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
@@ -823,47 +857,105 @@ fun Observaciones(actividad : ActividadResponse?) {
             color = TextPrimary,
             modifier = Modifier.weight(1f)
         )
+        IconButton(onClick = { isDialogVisible = true }) {
+            Icon(
+                imageVector = Icons.Filled.Edit,
+                contentDescription = "Editar",
+                tint = TextPrimary
+            )
+        }
     }
     Text(
-        text = actividad?.incidencias ?: "No hay Observaciones e Incidencias",
+        text = if (observaciones.isNotEmpty()) observaciones else "No hay Observaciones e Incidencias",
         fontSize = 16.sp,
-        color = TextPrimary
+        color = TextPrimary,
+        modifier = Modifier.padding(8.dp)
     )
 
-    // Popup de edición de observaciones
     if (isDialogVisible) {
         AlertDialog(
             onDismissRequest = { isDialogVisible = false },
             title = { Text("Editar Observaciones") },
             text = {
-                TextField(
-                    value = observaciones,
-                    onValueChange = { observaciones = it },
-                    label = { Text("Observaciones") },
-                    modifier = Modifier.fillMaxWidth(),
-                    maxLines = 5,
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text),
-                    keyboardActions = KeyboardActions.Default
-                )
+                Column {
+                    TextField(
+                        value = transporte,
+                        onValueChange = { transporte = it },
+                        label = { Text("Comentarios de Transporte") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 5,
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text),
+                        keyboardActions = KeyboardActions.Default
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextField(
+                        value = alojamiento,
+                        onValueChange = { alojamiento = it },
+                        label = { Text("Comentarios de Alojamiento") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 5,
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text),
+                        keyboardActions = KeyboardActions.Default
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextField(
+                        value = comentarios,
+                        onValueChange = { comentarios = it },
+                        label = { Text("Comentarios") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 5,
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text),
+                        keyboardActions = KeyboardActions.Default
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextField(
+                        value = estado,
+                        onValueChange = { estado = it },
+                        label = { Text("Comentarios de Estado") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 5,
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text),
+                        keyboardActions = KeyboardActions.Default
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextField(
+                        value = incidencias,
+                        onValueChange = { incidencias = it },
+                        label = { Text("Incidencias") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 5,
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text),
+                        keyboardActions = KeyboardActions.Default
+                    )
+                }
             },
             confirmButton = {
                 Button(
-                    onClick = { isDialogVisible = false } // Confirmar y cerrar el diálogo
+                    onClick = {
+                        val updatedActividad = actividad?.copy(
+                            comentTransporte = transporte,
+                            comentAlojamiento = alojamiento,
+                            comentarios = comentarios,
+                            comentEstado = estado,
+                            incidencias = incidencias
+                        )
+                        if (updatedActividad != null) {
+                            onUpdateActividad(updatedActividad)
+                        }
+                        isDialogVisible = false
+                    }
                 ) {
                     Text("Guardar")
                 }
             },
             dismissButton = {
-                Button(
-                    onClick = { isDialogVisible = false } // Cancelar y cerrar el diálogo
-                ) {
+                Button(onClick = { isDialogVisible = false }) {
                     Text("Cancelar")
                 }
             }
         )
     }
 }
-
 
 
 @Composable
@@ -911,7 +1003,7 @@ fun EditActivityDialog(
     )
 }
 
-/*
+
 @Composable
 fun MapaActividad(modifier: Modifier = Modifier) {
     val torrelavega = LatLng(43.353, -4.064)
@@ -935,7 +1027,7 @@ fun MapaActividad(modifier: Modifier = Modifier) {
     }
 }
 
-*/
+
 
 
 
