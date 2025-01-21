@@ -107,6 +107,7 @@ dependencies {
 
     implementation ("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation(libs.androidx.appcompat)
+    implementation(libs.play.services.location)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

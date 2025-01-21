@@ -21,7 +21,7 @@ data class ActividadResponse(
     val urlFolleto: String?,
     val solicitante: ProfesorResponse,
     val importePorAlumno: Double,
-    val latitud: Double,
-    val longitud: Double
+    var latitud: Double,
+    var longitud: Double
 
 )

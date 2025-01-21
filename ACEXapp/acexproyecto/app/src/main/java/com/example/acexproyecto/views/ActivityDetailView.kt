@@ -3,6 +3,7 @@ package com.example.acexproyecto.views
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.location.Location
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
@@ -58,6 +59,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -65,6 +67,7 @@ import com.example.acexproyecto.model.GrupoParticipanteResponse
 import com.example.acexproyecto.model.GrupoResponse
 import com.example.acexproyecto.model.PhotoResponse
 import com.example.appacex.model.ApiService
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -72,8 +75,8 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import com.google.android.gms.tasks.Task
+import com.google.maps.android.compose.rememberMarkerState
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -398,7 +401,7 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
                     .padding(4.dp)
                     .background(Color.Gray)
             ) {
-                MapaActividad(modifier = Modifier.fillMaxSize())
+                MapaActividad(actividad = activity, modifier = Modifier.fillMaxSize(), onDataChanged = onDataChanged)
             }
         }
     }
@@ -1191,24 +1194,100 @@ fun EditActivityDialog(
 }
 
 @Composable
-fun MapaActividad(modifier: Modifier = Modifier) {
-    val torrelavega = LatLng(43.353, -4.064)
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(torrelavega, 10f)
+fun MapaActividad(
+    actividad: ActividadResponse?,
+    modifier: Modifier = Modifier,
+    onDataChanged: (Boolean) -> Unit
+) {
+    val context = LocalContext.current
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val activityLocation = if (actividad?.latitud != null && actividad.longitud != null) {
+        LatLng(43.353, -4.064)
+    } else {
+        LatLng(actividad!!.latitud, actividad.longitud)
     }
 
-    // Usamos un Box para organizar el mapa
-    Box(modifier = modifier.fillMaxSize()) {
+    var markerPosition by remember { mutableStateOf(activityLocation) }
+    Log.d("MapaActividad", "Marker position: $activityLocation")
+    var isMarkerDraggable by remember { mutableStateOf(false) }
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(markerPosition, 10f)
+    }
+    val markerState = rememberMarkerState(position = markerPosition)
 
+    Box(modifier = modifier.fillMaxSize()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState
         ) {
             Marker(
-                state = com.google.maps.android.compose.rememberMarkerState(position = torrelavega),
-                title = "Torrelavega",
-                snippet = "Cantabria"
+                state = markerState,
+                title = actividad?.titulo ?: "IES Miguel Herrero Pereda",
+                snippet = actividad?.descripcion ?: "Torrelavega",
+                draggable = isMarkerDraggable,
+                onClick = {
+                    if (isMarkerDraggable) {
+                        markerPosition = it.position
+                        markerState.position = it.position
+                    }
+                    true
+                }
             )
+        }
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(4.dp)
+        ) {
+            IconButton(onClick = {
+                isMarkerDraggable = !isMarkerDraggable
+                if (isMarkerDraggable) {
+                    Toast.makeText(context, "Ahora puede mover el marcador del mapa, pulse el botón de nuevo para terminar", Toast.LENGTH_LONG).show()
+                } else {
+                    actividad?.latitud = markerPosition.latitude
+                    actividad?.longitud = markerPosition.longitude
+                    onDataChanged(true)
+                }
+            }) {
+                Box(
+                    modifier = Modifier
+                        .background(Color.White.copy(alpha = 0.75f))
+                        .padding(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Añadir/Editar Marker",
+                        tint = if (isMarkerDraggable) Color.Red else TextPrimary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            IconButton(onClick = {
+                fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                    location?.let {
+                        markerPosition = LatLng(it.latitude, it.longitude)
+                        markerState.position = LatLng(it.latitude, it.longitude)
+                        actividad?.latitud = it.latitude
+                        actividad?.longitud = it.longitude
+                        cameraPositionState.position = CameraPosition.fromLatLngZoom(markerPosition, 10f)
+                        Toast.makeText(context, "Localización: ${it.latitude}, ${it.longitude}", Toast.LENGTH_SHORT).show()
+                        onDataChanged(true)
+                    } ?: run {
+                        Toast.makeText(context, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }) {
+                Box(
+                    modifier = Modifier
+                        .background(Color.White.copy(alpha = 0.75f))
+                        .padding(4.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Usar Mi Localización", tint = TextPrimary)
+                }
+            }
         }
     }
 }
