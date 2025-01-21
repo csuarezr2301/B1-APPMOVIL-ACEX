@@ -2,9 +2,9 @@ package com.example.appacex.model
 
 data class ActividadResponse(
     val id: Int,
-    val titulo: String,
+    var titulo: String,
     val tipo: String,
-    val descripcion: String,
+    var descripcion: String,
     val fini: String,
     val ffin: String,
     val hini: String,
