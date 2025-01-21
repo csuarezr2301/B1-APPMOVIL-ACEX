@@ -2,14 +2,18 @@ package com.example.appacex.model
 
 import com.example.acexproyecto.model.GrupoParticipanteResponse
 import com.example.acexproyecto.model.GrupoResponse
+import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.PUT
 import retrofit2.http.DELETE
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
     @GET("api/profesor")
@@ -41,5 +45,14 @@ interface ApiService {
 
     @GET("api/grupo")
     fun getGrupos(): Call<List<GrupoResponse>>
+
+    @Multipart
+    @POST("api/foto/upload")
+    fun uploadPhotos(
+        @Part fotos: List<MultipartBody.Part>,
+        @Query("idActividad") idActividad: Int,
+        @Query("descripcion") descripcion: String
+    ): Call<Void>
+
 }
 

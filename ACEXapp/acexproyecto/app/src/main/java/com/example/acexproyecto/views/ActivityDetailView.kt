@@ -1,5 +1,8 @@
 package com.example.acexproyecto.views
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -58,10 +61,27 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import com.example.acexproyecto.model.GrupoParticipanteResponse
 import com.example.acexproyecto.model.GrupoResponse
+import com.example.acexproyecto.model.PhotoResponse
+import com.example.appacex.model.ApiService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.http.Multipart
+import retrofit2.http.POST
+import retrofit2.http.Part
+import retrofit2.http.Query
+import java.io.ByteArrayOutputStream
 
 var activity by mutableStateOf<ActividadResponse?>(null)
 var allGrupos by mutableStateOf<List<GrupoResponse>>(emptyList())
@@ -109,6 +129,7 @@ fun ActivityDetailView(navController: NavController, activityId: String) {
         topBar = { TopBar(navController) },
         content = { paddingValues ->
             ActivityDetailContent(
+                actividad = activity,
                 navController = navController,
                 modifier = Modifier.padding(paddingValues),
                 onDataChanged = { isDataChanged = it }
@@ -129,7 +150,7 @@ fun ActivityDetailView(navController: NavController, activityId: String) {
 
 
 @Composable
-fun ActivityDetailContent(navController: NavController, modifier: Modifier = Modifier, onDataChanged: (Boolean) -> Unit) {
+fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavController, modifier: Modifier = Modifier, onDataChanged: (Boolean) -> Unit) {
     var isDialogVisible by remember { mutableStateOf(false) }
     var isPopupVisible by remember { mutableStateOf(false) }
     var isCameraVisible by remember { mutableStateOf(false) }
@@ -137,6 +158,13 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
         uri?.let {
             selectedImages = selectedImages + it
         }
+    }
+    var titulo by remember { mutableStateOf(actividad?.titulo ?: "") }
+    var descripcion by remember { mutableStateOf(actividad?.descripcion ?: "") }
+
+    LaunchedEffect(actividad) {
+        titulo = actividad?.titulo ?: ""
+        descripcion = actividad?.descripcion ?: ""
     }
 
     LazyColumn(
@@ -150,7 +178,7 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = activity?.titulo ?: "Nombre de la actividad",
+                    text = titulo ?: "Nombre de la actividad",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary,
@@ -170,7 +198,7 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
         }
 
         item {
-            Text(text = "Fecha: ${activity?.fini} a ${activity?.ffin}", color = TextPrimary)
+            Text(text = "Fecha: ${actividad?.fini} a ${actividad?.ffin}", color = TextPrimary)
             Spacer(modifier = Modifier.height(8.dp))
         }
 
@@ -239,7 +267,7 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
                 }
                 item {
                     Text(
-                        text = activity?.descripcion ?: "Descricion no encontrada",
+                        text = descripcion ?: "Descricion no encontrada",
                         fontSize = 16.sp,
                         modifier = Modifier.padding(16.dp),
                         color = TextPrimary
@@ -253,9 +281,9 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
-                AlumnosAsistentes(onDataChanged)
+                AlumnosAsistentes(gruposAsistentes = grupoParticipantes, onDataChanged)
                 Spacer(modifier = Modifier.height(8.dp))
-                ProfesoresAsistentes(onDataChanged)
+                ProfesoresAsistentes(profAsistentes, onDataChanged)
                 Spacer(modifier = Modifier.height(15.dp))
                 Observaciones(actividad = activity, onUpdateActividad = { updatedActividad ->
                     // Update the actividad state with the new values
@@ -291,9 +319,14 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
 
     if (isDialogVisible) {
         EditActivityDialog(
+            actividad = activity,
             onNameChange = { newName -> /* Handle Name Change */ },
             onDescriptionChange = { newDescription -> /* Handle Description Change */ },
-            onDismiss = { isDialogVisible = false }
+            onDismiss = { isDialogVisible = false },
+            onUpdateActividad = { updatedActividad ->
+                activity = updatedActividad
+                onDataChanged(true)
+            }
         )
     }
 
@@ -326,13 +359,17 @@ fun ActivityDetailContent(navController: NavController, modifier: Modifier = Mod
 
 
 @Composable
-fun AlumnosAsistentes(onDataChanged: (Boolean) -> Unit) {
+fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataChanged: (Boolean) -> Unit) {
     var currentlyEditingId by remember { mutableStateOf<Int?>(null) }
     var totalParticipantes by remember { mutableStateOf(0) }
     var exNumParticipantes by remember { mutableStateOf(0) }
     var isPopupVisible by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedGrupos by remember { mutableStateOf(setOf<String>()) }
+
+    LaunchedEffect(gruposAsistentes) {
+        totalParticipantes = grupoParticipantes.sumOf { it.numParticipantes }
+    }
 
     selectedGrupos = grupoParticipantes.map { "${it.grupo}" }.toSet()
 
@@ -539,8 +576,6 @@ fun AlumnosAsistentes(onDataChanged: (Boolean) -> Unit) {
             confirmButton = {
                 Button(
                     onClick = {
-                        Log.d("ActivityDetailView", "Selected grupos: ${grupoParticipantes.size}")
-
                         val updatedGruposAsistentes = allGrupos.filter {
                             selectedGrupos.contains("${it.codGrupo}")
                         }.map { grupos ->
@@ -555,8 +590,6 @@ fun AlumnosAsistentes(onDataChanged: (Boolean) -> Unit) {
                             }
                         }.filterNotNull()
 
-                        Log.d("ActivityDetailView", "Updated grupos: ${updatedGruposAsistentes.size}")
-
                         // Merge the new groups with the existing ones
                         val mergedAsistentes = grupoParticipantes.toMutableList().apply {
                             addAll(updatedGruposAsistentes.filter { newGroup ->
@@ -564,15 +597,11 @@ fun AlumnosAsistentes(onDataChanged: (Boolean) -> Unit) {
                             })
                         }
 
-                        Log.d("ActivityDetailView", "Merged grupos: ${mergedAsistentes.size}")
-
                         if (!areGruposEqual(mergedAsistentes, grupoParticipantes)) {
                             grupoParticipantes = mergedAsistentes
                             totalParticipantes = grupoParticipantes.sumOf { it.numParticipantes }
                             onDataChanged(true)
                         }
-
-                        Log.d("ActivityDetailView", "Selected grupos: ${grupoParticipantes.size}")
 
                         isPopupVisible = false
                     }
@@ -590,16 +619,19 @@ fun AlumnosAsistentes(onDataChanged: (Boolean) -> Unit) {
 }
 
 @Composable
-fun ProfesoresAsistentes(onDataChanged: (Boolean) -> Unit) {
-    var profesoresLista by remember { mutableStateOf<List<ProfesorResponse>>(emptyList()) }
+fun ProfesoresAsistentes(profesAsistentes: List<ProfesorParticipanteResponse>, onDataChanged: (Boolean) -> Unit) {
+    var profesoresLista by remember { mutableStateOf<List<ProfesorResponse>>(emptyList()) } // todos los profesores
+    //var profesoresAsistentes by remember {mutableStateOf(profAsistentes)}
     var isLoadingProfesores by remember { mutableStateOf(true) }
     var isLoadingAsistentes by remember { mutableStateOf(true) }
     var searchQuery by remember { mutableStateOf("") }
-    var selectedProfesores by remember { mutableStateOf<List<ProfesorParticipanteResponse>>(emptyList()) }
+    var selectedProfesores by remember { mutableStateOf<List<ProfesorParticipanteResponse>>(emptyList()) } // lista de profesores seleccionados
     var isDialogVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    selectedProfesores = profAsistentes
+    LaunchedEffect(profesAsistentes) {
+        selectedProfesores = profAsistentes
+    }
 
     LaunchedEffect(Unit) {
         try {
@@ -647,9 +679,9 @@ fun ProfesoresAsistentes(onDataChanged: (Boolean) -> Unit) {
             }
         }
 
-        if (profAsistentes.isNotEmpty()) {
+        if (selectedProfesores.isNotEmpty()) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                profAsistentes?.forEach { profesor ->
+                selectedProfesores.forEach { profesor ->
                     Text(
                         text = "${profesor.profesor.nombre} ${profesor.profesor.apellidos}",
                         fontSize = 16.sp,
@@ -693,24 +725,14 @@ fun ProfesoresAsistentes(onDataChanged: (Boolean) -> Unit) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable {
-                                            val existingProfesor = selectedProfesores.find { it.profesor.uuid == profesor.uuid }
-                                            selectedProfesores = if (existingProfesor != null) {
-                                                selectedProfesores
-                                            } else {
-                                                selectedProfesores + ProfesorParticipanteResponse(
-                                                    id = 0,
-                                                    profesor = profesor,
-                                                    actividad = activity!!
-                                                )
-                                            }
-                                        }
+                                        .clickable { }
                                         .padding(16.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Checkbox(
                                         checked = isSelected,
                                         onCheckedChange = { checked ->
+                                            Log.d("ActivityDetailView", "Profesores Asistentes 1: ${selectedProfesores.size}")
                                             val existingProfesor = selectedProfesores.find { it.profesor.uuid == profesor.uuid }
                                             selectedProfesores = if (checked) {
                                                 if (existingProfesor == null) {
@@ -725,6 +747,8 @@ fun ProfesoresAsistentes(onDataChanged: (Boolean) -> Unit) {
                                             } else {
                                                 selectedProfesores.filter { it.profesor.uuid != profesor.uuid }
                                             }
+                                            Log.d("ActivityDetailView", "Profesores Asistentes 2: ${selectedProfesores.size}")
+                                            //profAsistentes = selectedProfesores
                                             onDataChanged(true)
                                         }
                                     )
@@ -749,7 +773,8 @@ fun ProfesoresAsistentes(onDataChanged: (Boolean) -> Unit) {
             confirmButton = {
                 Button(
                     onClick = {
-                        Log.d("ActivityDetailView", "Pre Updated profesores: ${profAsistentes.size}")
+                        Log.d("ActivityDetailView", "Profesores Asistentes Guardar: ${profAsistentes.size}")
+
                         val updatedProfAsistentes = profesoresLista.filter { profesor ->
                             selectedProfesores.any { it.profesor.uuid == profesor.uuid }
                         }.map { profesor ->
@@ -767,10 +792,6 @@ fun ProfesoresAsistentes(onDataChanged: (Boolean) -> Unit) {
 
                         deletedProfesores = deletedProfesores + removedProfAsistentes
 
-                        Log.d("ActivityDetailView", "Updated profesores: ${deletedProfesores.size}")
-                        Log.d("ActivityDetailView", "Updated profesores: ${updatedProfAsistentes}")
-                        Log.d("ActivityDetailView", "Updated profesores: ${profAsistentes.size}")
-
                         val mergedProfes = profAsistentes.toMutableList().apply {
                             addAll(updatedProfAsistentes.filter { newGroup ->
                                 none { it.profesor.uuid == newGroup.profesor.uuid }
@@ -780,15 +801,6 @@ fun ProfesoresAsistentes(onDataChanged: (Boolean) -> Unit) {
                         profAsistentes = mergedProfes
                         onDataChanged(true)
 
-                        if (!areProfessorsEqual(mergedProfes, profAsistentes)) {
-                            profAsistentes = mergedProfes
-                            onDataChanged(true)
-                        }
-                        /*if (selectedProfesores.isNotEmpty() && profAsistentes.isEmpty()) {
-                            profAsistentes = updatedProfAsistentes
-                            onDataChanged(true)
-                        }*/
-                        Log.d("ActivityDetailView", "Post Updated profesores: ${profAsistentes.size}")
                         isDialogVisible = false
                     }
                 ) {
@@ -964,12 +976,19 @@ fun Observaciones(actividad: ActividadResponse?, onUpdateActividad: (ActividadRe
 
 @Composable
 fun EditActivityDialog(
+    actividad: ActividadResponse?,
     onNameChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onUpdateActividad: (ActividadResponse) -> Unit
 ) {
-    var activityName by remember { mutableStateOf(activity?.titulo ?: "") }
-    var activityDescription by remember { mutableStateOf(activity?.descripcion ?: "") }
+    var activityName by remember { mutableStateOf("") }
+    var activityDescription by remember { mutableStateOf( "") }
+
+    LaunchedEffect(actividad) {
+        activityName = actividad?.titulo ?: ""
+        activityDescription = actividad?.descripcion ?: ""
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1003,8 +1022,20 @@ fun EditActivityDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                activity?.titulo = activityName
-                activity?.descripcion = activityDescription
+                val updatedActividad = actividad?.copy(
+                    titulo = activityName.takeIf { it.isNotEmpty() } ?: actividad.titulo,
+                    descripcion = activityDescription.takeIf { it.isNotEmpty() } ?: actividad.descripcion,
+                    comentTransporte = actividad.comentTransporte ?: "",
+                    comentAlojamiento = actividad.comentAlojamiento ?: "",
+                    comentarios = actividad.comentarios ?: "",
+                    comentEstado = actividad.comentEstado ?: "",
+                    incidencias = actividad.incidencias ?: ""
+                )
+
+                if (updatedActividad != null) {
+                    onUpdateActividad(updatedActividad)
+                }
+
                 onDismiss()
             }) {
                 Text("Guardar")
@@ -1040,10 +1071,6 @@ fun MapaActividad(modifier: Modifier = Modifier) {
         }
     }
 }
-
-
-
-
 
 // Popup con opciones para seleccionar la foto
 @Composable
@@ -1083,16 +1110,14 @@ fun BotonGuardar(isEnabled: Boolean, onSaveComplete: () -> Unit) {
     val context = LocalContext.current
 
     Row(
-        modifier = Modifier.fillMaxWidth(). padding(top = 12.dp, end = 12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp, end = 12.dp),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Button(
             onClick = {
-                Log.d("ActivityDetailView", "${activity.toString()}")
-                Log.d("ActivityDetailView", "${grupoParticipantes.size}")
-                Log.d("ActivityDetailView", "${profAsistentes.size}")
-
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         activity?.let {
@@ -1112,7 +1137,6 @@ fun BotonGuardar(isEnabled: Boolean, onSaveComplete: () -> Unit) {
 
                         grupoParticipantes.forEach { grupoParticipante ->
                             val response = RetrofitClient.instance.addGrupoParticipante(grupoParticipante)
-                            Log.d("ActivityDetailView", "GrupoParticipante: ${grupoParticipante}")
                             if (!response.isSuccessful) {
                                 Log.e("ActivityDetailView", "Error adding grupoParticipante: ${response.code()}")
                             }
@@ -1133,6 +1157,18 @@ fun BotonGuardar(isEnabled: Boolean, onSaveComplete: () -> Unit) {
                                 Log.e("ActivityDetailView", "Error adding profesorParticipante: ${response.code()}")
                             }
                         }
+
+                        val photoResponses = selectedImages.map { uri ->
+                            PhotoResponse(
+                                id = 0,
+                                url_foto = uri.toString(),
+                                descripcion = activity?.titulo ?: "",
+                                actividad = activity!!
+                            )
+                        }
+
+                        Log.d("Upload", "Uploading ${photoResponses}")
+                        uploadPhotoResponses(context, photoResponses, activity!!.id, activity!!.titulo)
 
                         withContext(Dispatchers.Main) {
                             Toast.makeText(context, "Datos guardados correctamente", Toast.LENGTH_SHORT).show()
@@ -1155,6 +1191,58 @@ fun BotonGuardar(isEnabled: Boolean, onSaveComplete: () -> Unit) {
             Text("Guardar")
         }
     }
+}
+
+fun photoResponseToMultipart(context: Context, photo: PhotoResponse): MultipartBody.Part {
+    val file = compressImage(context, Uri.parse(photo.url_foto))
+    Log.d("Upload", "Compressed file: ${file.absolutePath}, size: ${file.length()} bytes")
+    val requestFile = RequestBody.create("image/jpeg".toMediaTypeOrNull(), file)
+    return MultipartBody.Part.createFormData("fotos", file.name, requestFile)
+}
+
+/*
+fun uriToFile(context: Context, uri: Uri): File {
+    val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
+    val tempFile = File.createTempFile("temp", null, context.cacheDir)
+    tempFile.deleteOnExit()
+    val outputStream = FileOutputStream(tempFile)
+    inputStream?.copyTo(outputStream)
+    inputStream?.close()
+    outputStream.close()
+    return tempFile
+}
+*/
+
+fun uploadPhotoResponses(context: Context, photoResponses: List<PhotoResponse>, idActividad: Int, descripcion: String) {
+    val multipartPhotos = photoResponses.map { photoResponseToMultipart(context, it) }
+
+    Log.d("Upload", "Uploading ${multipartPhotos.toString()}")
+
+    val response = RetrofitClient.instance.uploadPhotos(multipartPhotos, idActividad, descripcion)
+    response.enqueue(object : Callback<Void> {
+        override fun onResponse(call: Call<Void>, response: Response<Void>) {
+            if (response.isSuccessful) {
+                Log.d("Upload", "Photos uploaded successfully")
+            } else {
+                Log.e("Upload", "Failed to upload photos: ${response.code()}")
+            }
+        }
+
+        override fun onFailure(call: Call<Void>, t: Throwable) {
+            Log.e("Upload", "Error uploading photos", t)
+        }
+    })
+}
+
+fun compressImage(context: Context, uri: Uri): File {
+    val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
+    val bitmap = BitmapFactory.decodeStream(inputStream)
+    val outputStream = ByteArrayOutputStream()
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream) // Compress to 50% quality
+    val byteArray = outputStream.toByteArray()
+    val tempFile = File.createTempFile("compressed", ".jpg", context.cacheDir)
+    tempFile.writeBytes(byteArray)
+    return tempFile
 }
 
 @Preview(showBackground = true)
