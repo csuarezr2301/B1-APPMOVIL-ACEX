@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Environment
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -82,6 +84,8 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Query
 import java.io.ByteArrayOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 
 var activity by mutableStateOf<ActividadResponse?>(null)
 var allGrupos by mutableStateOf<List<GrupoResponse>>(emptyList())
@@ -91,12 +95,15 @@ var profAsistentes by mutableStateOf<List<ProfesorParticipanteResponse>>(emptyLi
 var selectedImages by mutableStateOf<List<Uri>>(emptyList())
 var deletedGrupoParticipantes by mutableStateOf<List<GrupoParticipanteResponse>>(emptyList())
 var deletedProfesores by mutableStateOf<List<ProfesorParticipanteResponse>>(emptyList())
+var imagesActividad by mutableStateOf<List<PhotoResponse>>(emptyList())
+var deletedFotos by mutableStateOf<List<PhotoResponse>>(emptyList())
 
 @Composable
 fun ActivityDetailView(navController: NavController, activityId: String) {
     var isDataChanged by remember { mutableStateOf(false) }
 
     LaunchedEffect(activityId) {
+        selectedImages = emptyList()
         withContext(Dispatchers.IO) {
             try {
                 val response = RetrofitClient.instance.getActividades().execute()
@@ -118,6 +125,13 @@ fun ActivityDetailView(navController: NavController, activityId: String) {
                 val responseAllGrupos = RetrofitClient.instance.getGrupos().execute()
                 if (responseAllGrupos.isSuccessful) {
                     allGrupos = responseAllGrupos.body() ?: emptyList()
+                }
+                val responseFotos = RetrofitClient.instance.getFotos().execute()
+                if (responseFotos.isSuccessful) {
+                    imagesActividad = responseFotos.body()?.filter { it.actividad.id == activityId.toInt() } ?: emptyList()
+                    for (photo in imagesActividad) {
+                        Log.d("ActivityDetailView", "Photo: ${photo.urlFoto}")
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("ActivityDetailView", "Error fetching activity details", e)
@@ -157,10 +171,13 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
     val getImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             selectedImages = selectedImages + it
+            onDataChanged(true)
         }
     }
     var titulo by remember { mutableStateOf(actividad?.titulo ?: "") }
     var descripcion by remember { mutableStateOf(actividad?.descripcion ?: "") }
+    var showRemoveDialog by remember { mutableStateOf<Pair<Boolean, PhotoResponse?>>(false to null) }
+    var showRemoveSelectedDialog by remember { mutableStateOf<Pair<Boolean, Uri?>>(false to null) }
 
     LaunchedEffect(actividad) {
         titulo = actividad?.titulo ?: ""
@@ -218,35 +235,104 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
         }
 
         item {
+            val baseUrl = "http://4.233.223.75:8080/imagenes/actividad/"
+
             // LazyRow para mostrar fotos de la actividad
             LazyRow(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(selectedImages.size + 1) { index ->
-                    if (index == 0) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.foto),
-                            contentDescription = "Seleccionar foto",
-                            tint = ButtonPrimary,
-                            modifier = Modifier
-                                .size(120.dp)
-                                .padding(end = 8.dp)
-                                .clickable {
-                                    isPopupVisible = true
-                                }
-                        )
-                    } else {
+                item {
+                    Icon(
+                        painter = painterResource(id = R.drawable.foto),
+                        contentDescription = "Seleccionar foto",
+                        tint = ButtonPrimary,
+                        modifier = Modifier
+                            .size(120.dp)
+                            .padding(end = 8.dp)
+                            .clickable {
+                                isPopupVisible = true
+                            }
+                    )
+                }
+
+                items(imagesActividad) { photo ->
+                    val imageUrl = photo.urlFoto?.let {
+                        baseUrl + photo.actividad.titulo.replace(" ", "_") + "/" + it.substringAfterLast("\\").replace(" ", "_")
+                    } ?: run {
+                        Log.e("DisplayPhotos", "Invalid urlFoto: ${photo.urlFoto}")
+                        ""
+                    }
+                    Log.d("ActivityDetailView", "URL: $imageUrl")
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .padding(end = 8.dp)
+                    ) {
                         Image(
-                            painter = rememberImagePainter(selectedImages[index - 1]),
-                            contentDescription = "Foto $index",
+                            painter = rememberImagePainter(imageUrl),
+                            contentDescription = "Foto subida",
                             modifier = Modifier
-                                .size(120.dp)
-                                .padding(end = 8.dp)
+                                .fillMaxSize()
+                                .background(Color.Gray)
                         )
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(4.dp)
+                                .size(24.dp)
+                                .background(Color.Red.copy(alpha = 0.2f), shape = CircleShape)
+                                .clickable {
+                                    showRemoveDialog = true to photo
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Quitar foto",
+                                tint = Color.Red,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Images from selectedImages
+                items(selectedImages) { uri ->
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .padding(end = 8.dp)
+                    ) {
+                        Image(
+                            painter = rememberImagePainter(uri),
+                            contentDescription = "Foto seleccionada",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Gray)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(4.dp)
+                                .size(24.dp)
+                                .background(Color.Red.copy(alpha = 0.2f), shape = CircleShape)
+                                .clickable {
+                                    showRemoveSelectedDialog = true to uri
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Quitar foto",
+                                tint = Color.Red,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
                 }
             }
         }
+
 
         item {
             // Descripción de la actividad
@@ -349,10 +435,62 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
             onPhotoTaken = { uri ->
                 selectedImages = selectedImages + uri
                 isCameraVisible = false
+                onDataChanged(true)
                 Toast.makeText(navController.context, "Foto tomada: $uri", Toast.LENGTH_SHORT).show()
             },
             context = navController.context,
             navController = navController
+        )
+    }
+
+    if (showRemoveDialog.first) {
+        AlertDialog(
+            onDismissRequest = { showRemoveDialog = false to null },
+            title = { Text("Confirmación") },
+            text = { Text("¿Está seguro de que quiere quitar la foto?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRemoveDialog.second?.let { photo ->
+                        if (imagesActividad.contains(photo)) {
+                            deletedFotos = deletedFotos + photo
+                        }
+                        imagesActividad = imagesActividad - photo
+                        onDataChanged(true)
+                    }
+                    showRemoveDialog = false to null
+                }) {
+                    Text("Sí")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRemoveDialog = false to null }) {
+                    Text("No")
+                }
+            }
+        )
+    }
+
+    if (showRemoveSelectedDialog.first) {
+        AlertDialog(
+            onDismissRequest = { showRemoveSelectedDialog = false to null },
+            title = { Text("Confirmación") },
+            text = { Text("¿Está seguro de que quiere quitar la foto?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRemoveSelectedDialog.second?.let { uri ->
+                        selectedImages = selectedImages - uri
+                        onDataChanged(true)
+                    }
+                    showRemoveSelectedDialog = false to null
+                }) {
+                    Text("Sí")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRemoveSelectedDialog = false to null }) {
+                    Text("No")
+                }
+            }
         )
     }
 }
@@ -366,6 +504,7 @@ fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataC
     var isPopupVisible by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedGrupos by remember { mutableStateOf(setOf<String>()) }
+    var editedNumParticipantesMap by remember { mutableStateOf<Map<Int, String>>(emptyMap()) }
 
     LaunchedEffect(gruposAsistentes) {
         totalParticipantes = grupoParticipantes.sumOf { it.numParticipantes }
@@ -406,7 +545,8 @@ fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataC
     Spacer(modifier = Modifier.height(8.dp))
 
     grupoParticipantes.forEach { grupoParticipante ->
-        var editedNumParticipantes by remember { mutableStateOf(grupoParticipante.numParticipantes.toString()) }
+        //var editedNumParticipantes by remember { mutableStateOf(grupoParticipante.numParticipantes.toString()) }
+        val editedNumParticipantes = editedNumParticipantesMap[grupoParticipante.id] ?: grupoParticipante.numParticipantes.toString()
         val isEditing = currentlyEditingId == grupoParticipante.id
 
         LaunchedEffect(editedNumParticipantes) {
@@ -422,6 +562,7 @@ fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataC
                 grupoParticipantes = grupoParticipantes.filterNot { it.grupo.id == grupoParticipante.grupo.id }
                 selectedGrupos = selectedGrupos - grupoParticipante.grupo.codGrupo
                 totalParticipantes = grupoParticipantes.sumOf { it.numParticipantes }
+                editedNumParticipantesMap = editedNumParticipantesMap - grupoParticipante.id
                 onDataChanged(true)
             }) {
                 Icon(
@@ -443,7 +584,7 @@ fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataC
                     onValueChange = { newValue ->
                         val newNum = newValue.toIntOrNull() ?: 0
                         if (newNum in 0..grupoParticipante.grupo.numAlumnos) {
-                            editedNumParticipantes = newValue
+                            editedNumParticipantesMap = editedNumParticipantesMap + (grupoParticipante.id to newValue)
                             grupoParticipante.numParticipantes = newNum
                         }
                     },
@@ -1161,14 +1302,22 @@ fun BotonGuardar(isEnabled: Boolean, onSaveComplete: () -> Unit) {
                         val photoResponses = selectedImages.map { uri ->
                             PhotoResponse(
                                 id = 0,
-                                url_foto = uri.toString(),
+                                urlFoto = uri.toString(),
                                 descripcion = activity?.titulo ?: "",
                                 actividad = activity!!
                             )
                         }
 
-                        Log.d("Upload", "Uploading ${photoResponses}")
                         uploadPhotoResponses(context, photoResponses, activity!!.id, activity!!.titulo)
+
+                        // Delete photos in deletedFotos
+                        deletedFotos.forEach { photo ->
+                            val response = RetrofitClient.instance.deleteFoto(photo.id)
+                            if (!response.isSuccessful) {
+                                Log.e("ActivityDetailView", "Error deleting photo: ${response.code()}")
+                            }
+                        }
+                        deletedFotos = emptyList()
 
                         withContext(Dispatchers.Main) {
                             Toast.makeText(context, "Datos guardados correctamente", Toast.LENGTH_SHORT).show()
@@ -1194,44 +1343,35 @@ fun BotonGuardar(isEnabled: Boolean, onSaveComplete: () -> Unit) {
 }
 
 fun photoResponseToMultipart(context: Context, photo: PhotoResponse): MultipartBody.Part {
-    val file = compressImage(context, Uri.parse(photo.url_foto))
+    val file = compressImage(context, Uri.parse(photo.urlFoto))
     Log.d("Upload", "Compressed file: ${file.absolutePath}, size: ${file.length()} bytes")
     val requestFile = RequestBody.create("image/jpeg".toMediaTypeOrNull(), file)
     return MultipartBody.Part.createFormData("fotos", file.name, requestFile)
 }
 
-/*
-fun uriToFile(context: Context, uri: Uri): File {
-    val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
-    val tempFile = File.createTempFile("temp", null, context.cacheDir)
-    tempFile.deleteOnExit()
-    val outputStream = FileOutputStream(tempFile)
-    inputStream?.copyTo(outputStream)
-    inputStream?.close()
-    outputStream.close()
-    return tempFile
-}
-*/
-
 fun uploadPhotoResponses(context: Context, photoResponses: List<PhotoResponse>, idActividad: Int, descripcion: String) {
     val multipartPhotos = photoResponses.map { photoResponseToMultipart(context, it) }
 
-    Log.d("Upload", "Uploading ${multipartPhotos.toString()}")
+    if (multipartPhotos.isNotEmpty()) {
+        Log.d("Upload", "Uploading ${multipartPhotos.size} photos")
 
-    val response = RetrofitClient.instance.uploadPhotos(multipartPhotos, idActividad, descripcion)
-    response.enqueue(object : Callback<Void> {
-        override fun onResponse(call: Call<Void>, response: Response<Void>) {
-            if (response.isSuccessful) {
-                Log.d("Upload", "Photos uploaded successfully")
-            } else {
-                Log.e("Upload", "Failed to upload photos: ${response.code()}")
+        val response = RetrofitClient.instance.uploadPhotos(multipartPhotos, idActividad, descripcion)
+        response.enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                if (response.isSuccessful) {
+                    Log.d("Upload", "Photos uploaded successfully")
+                } else {
+                    Log.e("Upload", "Failed to upload photos: ${response.code()}")
+                }
             }
-        }
 
-        override fun onFailure(call: Call<Void>, t: Throwable) {
-            Log.e("Upload", "Error uploading photos", t)
-        }
-    })
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                Log.e("Upload", "Error uploading photos", t)
+            }
+        })
+    } else {
+        Log.e("Upload", "No photos to upload")
+    }
 }
 
 fun compressImage(context: Context, uri: Uri): File {

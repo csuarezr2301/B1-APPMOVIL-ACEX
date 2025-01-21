@@ -2,6 +2,7 @@ package com.example.appacex.model
 
 import com.example.acexproyecto.model.GrupoParticipanteResponse
 import com.example.acexproyecto.model.GrupoResponse
+import com.example.acexproyecto.model.PhotoResponse
 import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.Response
@@ -53,6 +54,12 @@ interface ApiService {
         @Query("idActividad") idActividad: Int,
         @Query("descripcion") descripcion: String
     ): Call<Void>
+
+    @GET("api/foto")
+    fun getFotos(): Call<List<PhotoResponse>>
+
+    @DELETE("api/foto/{id}")
+    suspend fun deleteFoto(@Path("id") id: Int): Response<Void>
 
 }
 
