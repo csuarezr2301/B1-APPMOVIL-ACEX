@@ -1,5 +1,7 @@
 package com.example.acexproyecto.views
 
+import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -82,8 +84,11 @@ import java.util.Calendar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.pm.PackageManager
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.MapProperties
 import java.text.SimpleDateFormat
@@ -1393,18 +1398,22 @@ fun MapaActividad(
             Spacer(modifier = Modifier.height(8.dp))
 
             IconButton(onClick = {
-                fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-                    location?.let {
-                        markerPosition = LatLng(it.latitude, it.longitude)
-                        markerState.position = LatLng(it.latitude, it.longitude)
-                        actividad?.latitud = it.latitude
-                        actividad?.longitud = it.longitude
-                        cameraPositionState.position = CameraPosition.fromLatLngZoom(markerPosition, 10f)
-                        Toast.makeText(context, "Localización: ${it.latitude}, ${it.longitude}", Toast.LENGTH_SHORT).show()
-                        onDataChanged(true)
-                    } ?: run {
-                        Toast.makeText(context, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show()
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                        location?.let {
+                            markerPosition = LatLng(it.latitude, it.longitude)
+                            markerState.position = LatLng(it.latitude, it.longitude)
+                            actividad?.latitud = it.latitude
+                            actividad?.longitud = it.longitude
+                            cameraPositionState.position = CameraPosition.fromLatLngZoom(markerPosition, 10f)
+                            Toast.makeText(context, "Localización: ${it.latitude}, ${it.longitude}", Toast.LENGTH_SHORT).show()
+                            onDataChanged(true)
+                        } ?: run {
+                            Toast.makeText(context, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show()
+                        }
                     }
+                } else {
+                    ActivityCompat.requestPermissions(context as Activity, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
                 }
             }) {
                 Box(
