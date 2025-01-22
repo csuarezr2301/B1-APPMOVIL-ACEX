@@ -5,7 +5,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.location.Location
 import android.net.Uri
-import android.os.Environment
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -60,13 +59,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import com.example.acexproyecto.model.GrupoParticipanteResponse
 import com.example.acexproyecto.model.GrupoResponse
 import com.example.acexproyecto.model.PhotoResponse
-import com.example.appacex.model.ApiService
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -75,20 +72,22 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
-import com.google.android.gms.tasks.Task
 import com.google.maps.android.compose.rememberMarkerState
 import java.io.File
-import java.io.FileOutputStream
 import java.io.InputStream
 import retrofit2.Call
 import retrofit2.Callback
-import retrofit2.http.Multipart
-import retrofit2.http.POST
-import retrofit2.http.Part
-import retrofit2.http.Query
 import java.io.ByteArrayOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
+import java.util.Calendar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Info
+import com.google.android.gms.maps.model.MapStyleOptions
+import com.google.maps.android.compose.MapProperties
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 var activity by mutableStateOf<ActividadResponse?>(null)
 var allGrupos by mutableStateOf<List<GrupoResponse>>(emptyList())
@@ -102,7 +101,7 @@ var imagesActividad by mutableStateOf<List<PhotoResponse>>(emptyList())
 var deletedFotos by mutableStateOf<List<PhotoResponse>>(emptyList())
 
 @Composable
-fun ActivityDetailView(navController: NavController, activityId: String) {
+fun ActivityDetailView(navController: NavController, activityId: String, isDarkTheme: Boolean) {
     var isDataChanged by remember { mutableStateOf(false) }
 
     LaunchedEffect(activityId) {
@@ -149,7 +148,8 @@ fun ActivityDetailView(navController: NavController, activityId: String) {
                 actividad = activity,
                 navController = navController,
                 modifier = Modifier.padding(paddingValues),
-                onDataChanged = { isDataChanged = it }
+                onDataChanged = { isDataChanged = it },
+                isDarkTheme = isDarkTheme
             )
             Box(
                 modifier = Modifier
@@ -165,9 +165,8 @@ fun ActivityDetailView(navController: NavController, activityId: String) {
     )
 }
 
-
 @Composable
-fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavController, modifier: Modifier = Modifier, onDataChanged: (Boolean) -> Unit) {
+fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavController, modifier: Modifier = Modifier, onDataChanged: (Boolean) -> Unit, isDarkTheme: Boolean) {
     var isDialogVisible by remember { mutableStateOf(false) }
     var isPopupVisible by remember { mutableStateOf(false) }
     var isCameraVisible by remember { mutableStateOf(false) }
@@ -192,6 +191,9 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        item {
+            Spacer(modifier = Modifier.height(35.dp))
+        }
         item {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -218,7 +220,23 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
         }
 
         item {
+            Text(text = "Solicitante: ${actividad?.solicitante?.nombre} ${actividad?.solicitante?.apellidos}", color = TextPrimary)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        item {
             Text(text = "Fecha: ${actividad?.fini} a ${actividad?.ffin}", color = TextPrimary)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        item {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "${actividad?.tipo}", color = TextPrimary, modifier = Modifier.weight(1f))
+                Text(text = "Estado: ${actividad?.estado}", color = TextPrimary, modifier = Modifier.weight(1f))
+            }
             Spacer(modifier = Modifier.height(8.dp))
         }
 
@@ -235,6 +253,10 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
                     modifier = Modifier.weight(1f)
                 )
             }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
         item {
@@ -336,6 +358,9 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
             }
         }
 
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         item {
             // Descripción de la actividad
@@ -401,7 +426,7 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
                     .padding(4.dp)
                     .background(Color.Gray)
             ) {
-                MapaActividad(actividad = activity, modifier = Modifier.fillMaxSize(), onDataChanged = onDataChanged)
+                MapaActividad(actividad = activity, modifier = Modifier.fillMaxSize(), onDataChanged = onDataChanged, isDarkTheme = isDarkTheme)
             }
         }
     }
@@ -548,7 +573,6 @@ fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataC
     Spacer(modifier = Modifier.height(8.dp))
 
     grupoParticipantes.forEach { grupoParticipante ->
-        //var editedNumParticipantes by remember { mutableStateOf(grupoParticipante.numParticipantes.toString()) }
         val editedNumParticipantes = editedNumParticipantesMap[grupoParticipante.id] ?: grupoParticipante.numParticipantes.toString()
         val isEditing = currentlyEditingId == grupoParticipante.id
 
@@ -696,6 +720,10 @@ fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataC
                                                 selectedGrupos + codigo
                                             } else {
                                                 selectedGrupos - codigo
+                                            }
+                                            if (grupoParticipantes.any { it.grupo.codGrupo == codigo }) {
+                                                deletedGrupoParticipantes = deletedGrupoParticipantes + grupoParticipantes.find { it.grupo.codGrupo == codigo }!!
+                                                grupoParticipantes = grupoParticipantes.filterNot { it.grupo.codGrupo == codigo }
                                             }
                                         }
                                     )
@@ -1118,6 +1146,7 @@ fun Observaciones(actividad: ActividadResponse?, onUpdateActividad: (ActividadRe
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditActivityDialog(
     actividad: ActividadResponse?,
@@ -1127,31 +1156,89 @@ fun EditActivityDialog(
     onUpdateActividad: (ActividadResponse) -> Unit
 ) {
     var activityName by remember { mutableStateOf("") }
-    var activityDescription by remember { mutableStateOf( "") }
+    var activityDescription by remember { mutableStateOf("") }
+    var startDate by remember { mutableStateOf("") }
+    var endDate by remember { mutableStateOf("") }
+    var startTime by remember { mutableStateOf("") }
+    var endTime by remember { mutableStateOf("") }
 
     LaunchedEffect(actividad) {
         activityName = actividad?.titulo ?: ""
         activityDescription = actividad?.descripcion ?: ""
+        startDate = actividad?.fini ?: ""
+        endDate = actividad?.ffin ?: ""
+        startTime = actividad?.hini ?: ""
+        endTime = actividad?.hfin ?: ""
     }
+
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+
+    val startDatePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            calendar.set(year, month, dayOfMonth)
+            startDate = dateFormat.format(calendar.time)
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
+
+    val endDatePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            calendar.set(year, month, dayOfMonth)
+            endDate = dateFormat.format(calendar.time)
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
+
+    val startTimePickerDialog = TimePickerDialog(
+        context,
+        { _, hourOfDay, minute ->
+            calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
+            calendar.set(Calendar.MINUTE, minute)
+            startTime = timeFormat.format(calendar.time)
+        },
+        calendar.get(Calendar.HOUR_OF_DAY),
+        calendar.get(Calendar.MINUTE),
+        true
+    )
+
+    val endTimePickerDialog = TimePickerDialog(
+        context,
+        { _, hourOfDay, minute ->
+            calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
+            calendar.set(Calendar.MINUTE, minute)
+            endTime = timeFormat.format(calendar.time)
+        },
+        calendar.get(Calendar.HOUR_OF_DAY),
+        calendar.get(Calendar.MINUTE),
+        true
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = "Editar actividad") },
         text = {
             Column {
-                // Campo para el nombre de la actividad
                 OutlinedTextField(
                     value = activityName,
                     onValueChange = {
                         activityName = it
                         onNameChange(it)
                     },
-                    label = { Text("Nombre de la actividaddd") },
+                    label = { Text("Nombre de la actividad") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // Campo para la descripción de la actividad
                 OutlinedTextField(
                     value = activityDescription,
                     onValueChange = {
@@ -1162,6 +1249,42 @@ fun EditActivityDialog(
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 5
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = "$startDate $startTime",
+                    onValueChange = {},
+                    label = { Text("Fecha de inicio") },
+                    readOnly = true,
+                    trailingIcon = {
+                        Row {
+                            IconButton(onClick = { startDatePickerDialog.show() }) {
+                                Icon(imageVector = Icons.Default.DateRange, contentDescription = "Seleccionar fecha de inicio")
+                            }
+                            IconButton(onClick = { startTimePickerDialog.show() }) {
+                                Icon(imageVector = Icons.Default.Info, contentDescription = "Seleccionar hora de inicio")
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = "$endDate $endTime",
+                    onValueChange = {},
+                    label = { Text("Fecha de fin") },
+                    readOnly = true,
+                    trailingIcon = {
+                        Row {
+                            IconButton(onClick = { endDatePickerDialog.show() }) {
+                                Icon(imageVector = Icons.Default.DateRange, contentDescription = "Seleccionar fecha de fin")
+                            }
+                            IconButton(onClick = { endTimePickerDialog.show() }) {
+                                Icon(imageVector = Icons.Default.Info, contentDescription = "Seleccionar hora de fin")
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
@@ -1169,11 +1292,10 @@ fun EditActivityDialog(
                 val updatedActividad = actividad?.copy(
                     titulo = activityName.takeIf { it.isNotEmpty() } ?: actividad.titulo,
                     descripcion = activityDescription.takeIf { it.isNotEmpty() } ?: actividad.descripcion,
-                    comentTransporte = actividad.comentTransporte ?: "",
-                    comentAlojamiento = actividad.comentAlojamiento ?: "",
-                    comentarios = actividad.comentarios ?: "",
-                    comentEstado = actividad.comentEstado ?: "",
-                    incidencias = actividad.incidencias ?: ""
+                    fini = startDate.takeIf { it.isNotEmpty() } ?: actividad.fini,
+                    ffin = endDate.takeIf { it.isNotEmpty() } ?: actividad.ffin,
+                    hini = startTime.takeIf { it.isNotEmpty() } ?: actividad.hini,
+                    hfin = endTime.takeIf { it.isNotEmpty() } ?: actividad.hfin
                 )
 
                 if (updatedActividad != null) {
@@ -1197,7 +1319,8 @@ fun EditActivityDialog(
 fun MapaActividad(
     actividad: ActividadResponse?,
     modifier: Modifier = Modifier,
-    onDataChanged: (Boolean) -> Unit
+    onDataChanged: (Boolean) -> Unit,
+    isDarkTheme: Boolean
 ) {
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
@@ -1214,11 +1337,15 @@ fun MapaActividad(
         position = CameraPosition.fromLatLngZoom(markerPosition, 10f)
     }
     val markerState = rememberMarkerState(position = markerPosition)
+    val mapStyleOptions = remember {
+        MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style_dark)
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState
+            cameraPositionState = cameraPositionState,
+            properties = MapProperties(mapStyleOptions = if (isDarkTheme) mapStyleOptions else null)
         ) {
             Marker(
                 state = markerState,
@@ -1252,7 +1379,7 @@ fun MapaActividad(
             }) {
                 Box(
                     modifier = Modifier
-                        .background(Color.White.copy(alpha = 0.75f))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f))
                         .padding(4.dp)
                 ) {
                     Icon(
@@ -1282,7 +1409,7 @@ fun MapaActividad(
             }) {
                 Box(
                     modifier = Modifier
-                        .background(Color.White.copy(alpha = 0.75f))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f))
                         .padding(4.dp)
                 ) {
                     Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Usar Mi Localización", tint = TextPrimary)
@@ -1333,7 +1460,7 @@ fun BotonGuardar(isEnabled: Boolean, onSaveComplete: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 12.dp, end = 12.dp),
-        horizontalArrangement = Arrangement.Start,
+        horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Button(
@@ -1468,5 +1595,5 @@ fun compressImage(context: Context, uri: Uri): File {
 @Composable
 fun ActivityScreenPreview() {
     val navController = rememberNavController()
-    ActivityDetailView(navController, "11")
+    ActivityDetailView(navController, "11", false)
 }
