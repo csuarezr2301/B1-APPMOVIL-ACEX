@@ -87,8 +87,10 @@ import android.app.TimePickerDialog
 import android.content.pm.PackageManager
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import coil.compose.AsyncImage
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.MapProperties
 import java.text.SimpleDateFormat
@@ -171,26 +173,35 @@ fun ActivityDetailView(navController: NavController, activityId: String, isDarkT
 }
 
 @Composable
-fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavController, modifier: Modifier = Modifier, onDataChanged: (Boolean) -> Unit, isDarkTheme: Boolean) {
+fun ActivityDetailContent(
+    actividad: ActividadResponse?,
+    navController: NavController,
+    modifier: Modifier = Modifier,
+    onDataChanged: (Boolean) -> Unit,
+    isDarkTheme: Boolean
+) {
+    // Variables de estado y configuración
     var isDialogVisible by remember { mutableStateOf(false) }
     var isPopupVisible by remember { mutableStateOf(false) }
     var isCameraVisible by remember { mutableStateOf(false) }
-    val getImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let {
-            selectedImages = selectedImages + it
-            onDataChanged(true)
+    val getImageLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let {
+                selectedImages = selectedImages + it
+                onDataChanged(true)
+            }
         }
-    }
     var titulo by remember { mutableStateOf(actividad?.titulo ?: "") }
     var descripcion by remember { mutableStateOf(actividad?.descripcion ?: "") }
-    var showRemoveDialog by remember { mutableStateOf<Pair<Boolean, PhotoResponse?>>(false to null) }
-    var showRemoveSelectedDialog by remember { mutableStateOf<Pair<Boolean, Uri?>>(false to null) }
+    var showImagePopup by remember { mutableStateOf<Pair<Boolean, PhotoResponse?>>(false to null) }
+    var showSelectedImagePopup by remember { mutableStateOf<Pair<Boolean, Uri?>>(false to null) }
+    var updatedDescription by remember { mutableStateOf("") }
 
     LaunchedEffect(actividad) {
         titulo = actividad?.titulo ?: ""
         descripcion = actividad?.descripcion ?: ""
     }
-
+    val baseUrl = "http://4.233.223.75:8080/imagenes/actividad/"
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -225,7 +236,10 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
         }
 
         item {
-            Text(text = "Solicitante: ${actividad?.solicitante?.nombre} ${actividad?.solicitante?.apellidos}", color = TextPrimary)
+            Text(
+                text = "Solicitante: ${actividad?.solicitante?.nombre} ${actividad?.solicitante?.apellidos}",
+                color = TextPrimary
+            )
             Spacer(modifier = Modifier.height(8.dp))
         }
 
@@ -239,8 +253,16 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "${actividad?.tipo}", color = TextPrimary, modifier = Modifier.weight(1f))
-                Text(text = "Estado: ${actividad?.estado}", color = TextPrimary, modifier = Modifier.weight(1f))
+                Text(
+                    text = "${actividad?.tipo}",
+                    color = TextPrimary,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "Estado: ${actividad?.estado}",
+                    color = TextPrimary,
+                    modifier = Modifier.weight(1f)
+                )
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -265,9 +287,8 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
         }
 
         item {
-            val baseUrl = "http://4.233.223.75:8080/imagenes/actividad/"
 
-            // LazyRow para mostrar fotos de la actividad
+
             LazyRow(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -287,16 +308,19 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
 
                 items(imagesActividad) { photo ->
                     val imageUrl = photo.urlFoto?.let {
-                        baseUrl + photo.actividad.titulo.replace(" ", "_") + "/" + it.substringAfterLast("\\").replace(" ", "_")
-                    } ?: run {
-                        Log.e("DisplayPhotos", "Invalid urlFoto: ${photo.urlFoto}")
-                        ""
-                    }
-                    Log.d("ActivityDetailView", "URL: $imageUrl")
+                        baseUrl + photo.actividad.titulo.replace(
+                            " ",
+                            "_"
+                        ) + "/" + it.substringAfterLast("\\").replace(" ", "_")
+                    } ?: ""
                     Box(
                         modifier = Modifier
                             .size(120.dp)
                             .padding(end = 8.dp)
+                            .clickable {
+                                updatedDescription = photo.descripcion ?: ""
+                                showImagePopup = true to photo
+                            }
                     ) {
                         Image(
                             painter = rememberImagePainter(imageUrl),
@@ -305,33 +329,17 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
                                 .fillMaxSize()
                                 .background(Color.Gray)
                         )
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(4.dp)
-                                .size(24.dp)
-                                .background(Color.Red.copy(alpha = 0.2f), shape = CircleShape)
-                                .clickable {
-                                    showRemoveDialog = true to photo
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Clear,
-                                contentDescription = "Quitar foto",
-                                tint = Color.Red,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
                     }
                 }
 
-                // Images from selectedImages
                 items(selectedImages) { uri ->
                     Box(
                         modifier = Modifier
                             .size(120.dp)
                             .padding(end = 8.dp)
+                            .clickable {
+                                showSelectedImagePopup = true to uri
+                            }
                     ) {
                         Image(
                             painter = rememberImagePainter(uri),
@@ -340,24 +348,6 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
                                 .fillMaxSize()
                                 .background(Color.Gray)
                         )
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(4.dp)
-                                .size(24.dp)
-                                .background(Color.Red.copy(alpha = 0.2f), shape = CircleShape)
-                                .clickable {
-                                    showRemoveSelectedDialog = true to uri
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Clear,
-                                contentDescription = "Quitar foto",
-                                tint = Color.Red,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
                     }
                 }
             }
@@ -396,7 +386,7 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
         }
 
         item {
-            Column (
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
@@ -431,7 +421,12 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
                     .padding(4.dp)
                     .background(Color.Gray)
             ) {
-                MapaActividad(actividad = activity, modifier = Modifier.fillMaxSize(), onDataChanged = onDataChanged, isDarkTheme = isDarkTheme)
+                MapaActividad(
+                    actividad = activity,
+                    modifier = Modifier.fillMaxSize(),
+                    onDataChanged = onDataChanged,
+                    isDarkTheme = isDarkTheme
+                )
             }
         }
     }
@@ -469,65 +464,110 @@ fun ActivityDetailContent(actividad: ActividadResponse?, navController: NavContr
                 selectedImages = selectedImages + uri
                 isCameraVisible = false
                 onDataChanged(true)
-                Toast.makeText(navController.context, "Foto tomada: $uri", Toast.LENGTH_SHORT).show()
+                Toast.makeText(navController.context, "Foto tomada: $uri", Toast.LENGTH_SHORT)
+                    .show()
             },
             context = navController.context,
             navController = navController
         )
     }
 
-    if (showRemoveDialog.first) {
-        AlertDialog(
-            onDismissRequest = { showRemoveDialog = false to null },
-            title = { Text("Confirmación") },
-            text = { Text("¿Está seguro de que quiere quitar la foto?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showRemoveDialog.second?.let { photo ->
-                        if (imagesActividad.contains(photo)) {
-                            deletedFotos = deletedFotos + photo
-                        }
-                        imagesActividad = imagesActividad - photo
-                        onDataChanged(true)
-                    }
-                    showRemoveDialog = false to null
-                }) {
-                    Text("Sí")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showRemoveDialog = false to null }) {
-                    Text("No")
-                }
-            }
-        )
-    }
 
-    if (showRemoveSelectedDialog.first) {
+    // Popup para fotos
+    // Verifica si el primer valor de 'showImagePopup' es true, indicando que el popup de la imagen debe mostrarse.
+    if (showImagePopup.first) {
+        val photo = showImagePopup.second
+        val imageUrl = photo?.urlFoto?.let {
+            baseUrl + photo.actividad.titulo.replace(" ", "_") + "/" + it.substringAfterLast("\\")
+                .replace(" ", "_")
+        } ?: ""
+
+        Log.d("PopupImage", "URL de imagen: $imageUrl")
+
         AlertDialog(
-            onDismissRequest = { showRemoveSelectedDialog = false to null },
-            title = { Text("Confirmación") },
-            text = { Text("¿Está seguro de que quiere quitar la foto?") },
+            onDismissRequest = { showImagePopup = false to null },
+            title = { Text("Vista de Foto") },
+            text = {
+                Column {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = "Foto ampliada",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                            .padding(bottom = 16.dp),
+                        onError = {
+                            Log.e(
+                                "PopupImageError",
+                                "Error cargando imagen en popup: $imageUrl"
+                            )
+                        }
+                    )
+                    OutlinedTextField(
+                        value = updatedDescription,
+                        onValueChange = { updatedDescription = it },
+                        label = { Text("Descripción de la foto") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
             confirmButton = {
-                TextButton(onClick = {
-                    showRemoveSelectedDialog.second?.let { uri ->
-                        selectedImages = selectedImages - uri
-                        onDataChanged(true)
+                Column {
+                    TextButton(
+                        onClick = {
+                            // Verificamos que la foto no sea nula
+                            photo?.let {
+                                // Actualizamos la descripción de la foto
+                                it.descripcion = updatedDescription
+
+                                // Actualizamos la lista de imágenes en el estado
+                                imagesActividad = imagesActividad.map { photoItem ->
+                                    if (photoItem.id == it.id) {
+                                        // Si el ID coincide, actualizamos la descripción
+                                        photoItem.copy(descripcion = updatedDescription)
+                                    } else {
+                                        // Si no coincide, dejamos la foto sin cambios
+                                        photoItem
+                                    }
+                                }.toMutableList() // Convertimos a MutableList para asegurarnos de que sea mutable
+
+                                // Llamamos a onDataChanged para notificar que los datos han cambiado
+                                onDataChanged(true)
+
+                                // Cerramos el popup de la imagen
+                                showImagePopup = false to null
+                            }
+                        }
+                    ) {
+                        Text("Guardar")
                     }
-                    showRemoveSelectedDialog = false to null
-                }) {
-                    Text("Sí")
+
+                    Button(
+                        onClick = {
+                            // Elimina la foto de imagesActividad y la agrega a deletedFotos
+                            photo?.let {
+                                imagesActividad = imagesActividad.filter { it.id != photo.id }
+                                deletedFotos =
+                                    deletedFotos + it // Se agrega a deletedFotos para ser eliminada de la base de datos
+                                onDataChanged(true)
+                                showImagePopup = false to null
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Eliminar Foto", color = Color.White)
+                    }
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showRemoveSelectedDialog = false to null }) {
-                    Text("No")
+                TextButton(onClick = { showImagePopup = false to null }) {
+                    Text("Cancelar")
                 }
             }
         )
     }
 }
-
 
 @Composable
 fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataChanged: (Boolean) -> Unit) {
@@ -1263,10 +1303,16 @@ fun EditActivityDialog(
                     trailingIcon = {
                         Row {
                             IconButton(onClick = { startDatePickerDialog.show() }) {
-                                Icon(imageVector = Icons.Default.DateRange, contentDescription = "Seleccionar fecha de inicio")
+                                Icon(imageVector = Icons.Default.DateRange,
+                                    contentDescription = "Seleccionar fecha de inicio")
                             }
                             IconButton(onClick = { startTimePickerDialog.show() }) {
-                                Icon(imageVector = Icons.Default.Info, contentDescription = "Seleccionar hora de inicio")
+                                Image(
+                                    painter = painterResource(id = R.drawable.reloj),  // Carga la imagen desde recursos
+                                    contentDescription = "Seleccionar fecha de inicio",
+                                    modifier = Modifier.size(24.dp),  // Puedes ajustar el tamaño si lo necesitas
+                                    colorFilter = ColorFilter.tint(Color.DarkGray)
+                                    )
                             }
                         }
                     },
@@ -1283,8 +1329,13 @@ fun EditActivityDialog(
                             IconButton(onClick = { endDatePickerDialog.show() }) {
                                 Icon(imageVector = Icons.Default.DateRange, contentDescription = "Seleccionar fecha de fin")
                             }
-                            IconButton(onClick = { endTimePickerDialog.show() }) {
-                                Icon(imageVector = Icons.Default.Info, contentDescription = "Seleccionar hora de fin")
+                            IconButton(onClick = { startTimePickerDialog.show() }) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.reloj),  // Carga la imagen desde recursos
+                                    contentDescription = "Seleccionar fecha de inicio",
+                                    modifier = Modifier.size(24.dp),  // Puedes ajustar el tamaño si lo necesitas
+                                    colorFilter = ColorFilter.tint(Color.DarkGray)
+                                    )
                             }
                         }
                     },
@@ -1483,6 +1534,7 @@ fun BotonGuardar(isEnabled: Boolean, onSaveComplete: () -> Unit) {
                             }
                         }
 
+
                         deletedGrupoParticipantes.forEach { grupoParticipante ->
                             val response = RetrofitClient.instance.deleteGrupoParticipante(grupoParticipante.id)
                             if (!response.isSuccessful) {
@@ -1538,6 +1590,7 @@ fun BotonGuardar(isEnabled: Boolean, onSaveComplete: () -> Unit) {
                             Toast.makeText(context, "Datos guardados correctamente", Toast.LENGTH_SHORT).show()
                             onSaveComplete()
                         }
+
                     } catch (e: Exception) {
                         Log.e("BotonGuardar", "Error saving data", e)
                         withContext(Dispatchers.Main) {

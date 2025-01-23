@@ -1,6 +1,7 @@
 package com.example.acexproyecto.objetos
 
 import com.example.appacex.model.Departamento
+import com.example.appacex.model.ProfesorResponse
 
 object Usuario {
     var displayName: String = ""
@@ -9,6 +10,5 @@ object Usuario {
     var apiToken: String = ""
     var msalToken: String = ""
     var calendarId: String = ""
-    var rol: String = ""
-    var departamento: Departamento? = null
+    var profesor: ProfesorResponse? = null
 }

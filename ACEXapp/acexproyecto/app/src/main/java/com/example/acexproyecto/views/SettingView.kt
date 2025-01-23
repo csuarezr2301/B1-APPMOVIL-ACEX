@@ -229,9 +229,9 @@ fun UserDetails() {
     Column(modifier = Modifier.fillMaxWidth()) {
         // Información detallada (Contraseña, Rol, Activo, Departamento)
 
-        UserDetailField(label = "Rol", value = getRoleDisplayName(Usuario.rol))
+        UserDetailField(label = "Rol", value = getRoleDisplayName(Usuario.profesor?.rol ?: ""))
         Spacer(modifier = Modifier.height(10.dp))
-        UserDetailField(label = "Departamento", value = Usuario.departamento?.nombre ?: "Sin Departamento")
+        UserDetailField(label = "Departamento", value = Usuario.profesor?.depart?.nombre ?: "Sin Departamento")
     }
 }
 

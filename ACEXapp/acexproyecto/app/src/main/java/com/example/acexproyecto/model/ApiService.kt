@@ -55,6 +55,7 @@ interface ApiService {
         @Query("descripcion") descripcion: String
     ): Call<Void>
 
+
     @GET("api/foto")
     fun getFotos(): Call<List<PhotoResponse>>
 
