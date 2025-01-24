@@ -137,7 +137,7 @@ fun SearchBar(
         "DPFM1", "DPFM2", "ESO1", "ESO2", "ESO3", "ESO4", "FPBFM1", "FPBFM2", "FPBIC1", "FPBIC2",
         "GAD1", "GAD2", "MEC1", "MEC2", "PPFM1", "PPFM2", "SMR1", "SMR2"
     )
-    
+
     val estadoOptions = listOf("SOLICITADA", "DENEGADA", "APROBADA", "REALIZADA", "REALIZANDOSE", "CANCELADA")
 
     Column(modifier = Modifier.fillMaxWidth()) {

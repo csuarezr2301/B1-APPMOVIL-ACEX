@@ -1586,6 +1586,16 @@ fun BotonGuardar(isEnabled: Boolean, onSaveComplete: () -> Unit) {
                         }
                         deletedFotos = emptyList()
 
+                        // Subir la foto actualizadas
+                        imagesActividad.forEach { photo ->
+                            // Aquí guardamos las fotos con las descripciones actualizadas
+                            val response = RetrofitClient.instance.updateFoto(photo.id, photo)
+                            if (!response.isSuccessful) {
+                                Log.e("ActivityDetailView", "Error updating photo: ${response.code()}")
+                            }
+                        }
+
+
                         withContext(Dispatchers.Main) {
                             Toast.makeText(context, "Datos guardados correctamente", Toast.LENGTH_SHORT).show()
                             onSaveComplete()

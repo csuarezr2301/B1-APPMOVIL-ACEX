@@ -62,5 +62,13 @@ interface ApiService {
     @DELETE("api/foto/{id}")
     suspend fun deleteFoto(@Path("id") id: Int): Response<Void>
 
+    @PUT("api/foto/{id}")
+    suspend fun updateFoto(
+        @Path("id") id: Int,
+        @Body photo: PhotoResponse
+    ): Response<Void>
+
+
+
 }
 
