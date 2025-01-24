@@ -1,6 +1,5 @@
 package com.example.acexproyecto.views
 
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,7 +10,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 
 import androidx.compose.foundation.lazy.items
 
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -27,25 +25,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.example.acexproyecto.ui.theme.ButtonPrimary
 import com.example.acexproyecto.ui.theme.TextPrimary
 import com.example.appacex.model.ActividadResponse
 import com.example.appacex.model.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.window.Popup
 import com.example.acexproyecto.model.GrupoParticipanteResponse
@@ -69,6 +60,7 @@ fun ActivitiesView(navController: NavController) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf<Long?>(null) }  // Para el filtro de fecha (un solo día)
     var selectedCourse by remember { mutableStateOf<String?>(null) } // Ahora es String, ya que el curso es un nombre (no Long)
+    var selectedState by remember { mutableStateOf<String?>(null) }  // Estado seleccionado
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -86,10 +78,11 @@ fun ActivitiesView(navController: NavController) {
                         onSearchQueryChanged = { query ->
                             searchQuery = query  // Actualiza el texto de búsqueda
                         },
-                        onFilterSelected = { filter, date, course ->
-                            selectedFilter = filter  // Actualiza el filtro de texto
-                            selectedDate = date  // Actualiza la fecha seleccionada (solo un día)
-                            selectedCourse = course  // Actualiza el curso seleccionado
+                        onFilterSelected = { filter, date, course, state ->
+                            selectedFilter = filter
+                            selectedDate = date
+                            selectedCourse = course
+                            selectedState = state // Aseguramos que el estado seleccionado se actualice
                         }
                     )
 
@@ -102,8 +95,7 @@ fun ActivitiesView(navController: NavController) {
                             .weight(1.5f) // Esto asegura que ocupe la mitad superior de la pantalla
                     ) {
                         AllActividades(navController, selectedFilter, searchQuery, selectedDate,
-                            selectedCourse
-                        )
+                            selectedCourse, selectedState) // Pasamos el estado al filtrar
                     }
 
                     // Espacio entre las secciones
@@ -123,43 +115,41 @@ fun ActivitiesView(navController: NavController) {
         bottomBar = { BottomDetailBar(navController) }
     )
 }
+
 @Composable
 fun SearchBar(
-    onSearchQueryChanged: (String) -> Unit,  // Callback para recibir el texto de búsqueda
-    onFilterSelected: (String?, Long?, String?) -> Unit  // Callback para recibir el filtro seleccionado
+    onSearchQueryChanged: (String) -> Unit,
+    onFilterSelected: (String?, Long?, String?, String?) -> Unit
 ) {
     var searchText by remember { mutableStateOf("") }
     val filterOptions = listOf("Por Fecha", "Por Curso", "Por Estado", "Todas")
-    var selectedFilter by remember { mutableStateOf<String?>(null) }  // Valor por defecto
+    var selectedFilter by remember { mutableStateOf<String?>(null) }
     var showPopup by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
-    var selectedDate by remember { mutableStateOf<Long?>(null) }  // Fecha seleccionada para el filtro de fechas
-    var showCoursePicker by remember { mutableStateOf(false) }  // Mostrar diálogo de selección de curso
-    var selectedCourse by remember { mutableStateOf<String?>(null) } // Curso seleccionado
-    var showStatePicker by remember { mutableStateOf(false) }  // Mostrar diálogo de selección de estado
-    var selectedState by remember { mutableStateOf<String?>(null) }  // Estado seleccionado
+    var selectedDate by remember { mutableStateOf<Long?>(null) }
+    var showCoursePicker by remember { mutableStateOf(false) }
+    var selectedCourse by remember { mutableStateOf<String?>(null) }
+    var showStatePicker by remember { mutableStateOf(false) }
+    var selectedState by remember { mutableStateOf<String?>(null) }
 
-    // Lista de cursos disponibles (puedes obtener esto desde la base de datos)
     val cursos = listOf(
         "ASIR1", "ASIR2", "AYF1", "AYF2", "BACH1", "BACH2", "DAM1", "DAM2", "DAW1", "DAW2",
         "DPFM1", "DPFM2", "ESO1", "ESO2", "ESO3", "ESO4", "FPBFM1", "FPBFM2", "FPBIC1", "FPBIC2",
         "GAD1", "GAD2", "MEC1", "MEC2", "PPFM1", "PPFM2", "SMR1", "SMR2"
     )
-
-    // Lista de estados posibles
+    
     val estadoOptions = listOf("SOLICITADA", "DENEGADA", "APROBADA", "REALIZADA", "REALIZANDOSE", "CANCELADA")
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        // Barra de búsqueda
         OutlinedTextField(
             value = searchText,
             onValueChange = {
                 searchText = it
-                onSearchQueryChanged(it) // Actualizamos la búsqueda cada vez que cambia el texto
+                onSearchQueryChanged(it) // Cada vez que cambia el texto de búsqueda
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp),  // Espaciado superior
+                .padding(top = 16.dp),
             label = { Text("Buscar actividad...", color = TextPrimary) },
             leadingIcon = {
                 Icon(imageVector = Icons.Filled.Search, contentDescription = "Buscar", tint = TextColor)
@@ -167,20 +157,18 @@ fun SearchBar(
             singleLine = true,
             shape = RoundedCornerShape(8.dp),
             trailingIcon = {
-                // Ícono de filtro dentro de la barra de búsqueda
                 IconButton(onClick = { showPopup = !showPopup }) {
                     Icon(imageVector = Icons.Filled.Menu, contentDescription = "Filtrar")
                 }
             }
         )
 
-        // Si showPopup es verdadero, se muestra el popup
+        // Popup con opciones de filtro
         if (showPopup) {
             Popup(
                 alignment = Alignment.TopStart,
                 onDismissRequest = { showPopup = false }
             ) {
-                // Aquí creamos el contenido del Popup
                 Card(
                     modifier = Modifier
                         .padding(16.dp)
@@ -195,20 +183,21 @@ fun SearchBar(
                                     .clickable {
                                         when (filter) {
                                             "Por Curso" -> {
-                                                // Activar el selector de curso
                                                 showCoursePicker = true
                                             }
                                             "Por Fecha" -> {
-                                                // Activar el selector de fecha
                                                 showDatePicker = true
                                             }
                                             "Por Estado" -> {
-                                                // Activar el selector de estado
                                                 showStatePicker = true
                                             }
-                                            else -> {
-                                                selectedFilter = if (filter == "Todas") null else filter
-                                                onFilterSelected(selectedFilter, null, null) // Llamamos al callback
+                                            "Todas" -> {
+                                                // Cuando se selecciona "Todas", restablecer todo a null
+                                                selectedFilter = null
+                                                selectedDate = null
+                                                selectedCourse = null
+                                                selectedState = null
+                                                onFilterSelected(selectedFilter, selectedDate, selectedCourse, selectedState)
                                                 showPopup = false // Cerramos el popup
                                             }
                                         }
@@ -226,48 +215,52 @@ fun SearchBar(
             }
         }
 
-        // Aquí aparece el selector de estado si `showStatePicker` es verdadero
+        // Selector de estado
         if (showStatePicker) {
             StatePickerDialog(
                 estadoOptions = estadoOptions,
                 onDismissRequest = { showStatePicker = false },
                 onStateSelected = { state ->
                     selectedState = state
-                    onFilterSelected(selectedFilter, selectedDate, selectedState) // Pasamos el estado seleccionado
-                    showPopup = false // Cierra el popup
-                    showStatePicker = false // Cierra el selector de estado
+                    // Al seleccionar un estado, reiniciamos la búsqueda
+                    onFilterSelected(null, null, null, selectedState)
+                    showStatePicker = false
+                    showPopup = false
                 }
             )
         }
 
-        // Aquí aparece el selector de cursos si `showCoursePicker` es verdadero
+        // Selector de cursos
         if (showCoursePicker) {
             CoursePickerDialog(
                 cursos = cursos,
                 onDismissRequest = { showCoursePicker = false },
                 onCourseSelected = { course ->
                     selectedCourse = course
-                    onFilterSelected(selectedFilter, selectedDate, selectedCourse) // Pasamos el curso seleccionado
-                    showPopup = false // Cierra el popup
-                    showCoursePicker = false // Cierra el selector de cursos
+                    // Al seleccionar un curso, reiniciamos la búsqueda
+                    onFilterSelected(null, null, selectedCourse, null)
+                    showCoursePicker = false
+                    showPopup = false
                 }
             )
         }
 
-        // Aquí aparece el selector de fechas si `showDatePicker` es verdadero
+        // Selector de fecha
         if (showDatePicker) {
             DatePickerDialog(
                 onDismissRequest = { showDatePicker = false },
                 onDateSelected = { date ->
                     selectedDate = date
-                    onFilterSelected(selectedFilter, selectedDate, selectedCourse) // Llamamos al callback con la fecha seleccionada
-                    showPopup = false // Cierra el popup
-                    showDatePicker = false // Cierra el selector de fechas
+                    // Al seleccionar una fecha, reiniciamos la búsqueda
+                    onFilterSelected(null, selectedDate, null, null)
+                    showDatePicker = false
+                    showPopup = false
                 }
             )
         }
     }
 }
+
 
 @Composable
 fun StatePickerDialog(
@@ -373,11 +366,12 @@ fun AllActividades(
     navController: NavController,
     selectedFilter: String?,
     searchQuery: String,
-    selectedDate: Long?, // Solo una fecha, no un rango
-    selectedCourse: String? // Recibe el curso seleccionado
+    selectedDate: Long?,
+    selectedCourse: String?,
+    selectedState: String?
 ) {
     val actividades = remember { mutableStateListOf<ActividadResponse>() }
-    val gruposParticipantes = remember { mutableStateListOf<GrupoParticipanteResponse>() } // Lista de participantes
+    val gruposParticipantes = remember { mutableStateListOf<GrupoParticipanteResponse>() }
     val isLoading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
 
@@ -385,22 +379,22 @@ fun AllActividades(
     fun stringToDate(dateString: String): Long {
         val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val date = format.parse(dateString)
-        return date?.time ?: 0L // Si no puede parsear, devuelve 0L
+        return date?.time ?: 0L
     }
 
-    // Lógica de filtrado
+    // Función de filtrado
     fun filterActividades(
         actividadesList: List<ActividadResponse>,
         gruposParticipantesList: List<GrupoParticipanteResponse>,
         selectedCourse: String?,
-        selectedState: String?  // Agregamos el parámetro para el estado seleccionado
+        selectedState: String?
     ): List<ActividadResponse> {
         return actividadesList.filter { actividad ->
 
             // Filtro por estado (si se ha seleccionado uno)
             val matchesState = selectedState?.let {
-                actividad.estado.equals(it, ignoreCase = true)
-            } ?: true // Si no se seleccionó un estado, no se filtra por estado
+                actividad.estado?.equals(it, ignoreCase = true) == true
+            } ?: true // Si no se selecciona un estado, no se filtra
 
             // Filtro por título de búsqueda
             val matchesSearchQuery = actividad.titulo.contains(searchQuery, ignoreCase = true)
@@ -409,7 +403,6 @@ fun AllActividades(
             val matchesDate = selectedDate?.let {
                 val activityStartDate = stringToDate(actividad.fini)
                 val activityEndDate = stringToDate(actividad.ffin)
-
                 val calendar = Calendar.getInstance()
                 calendar.timeInMillis = selectedDate
                 calendar.set(Calendar.HOUR_OF_DAY, 0)
@@ -426,7 +419,7 @@ fun AllActividades(
                 val activityStartDateNoTime = calendar.timeInMillis
 
                 selectedDateNoTime == activityStartDateNoTime
-            } ?: true
+            } ?: true // Si no se selecciona una fecha, no se filtra
 
             // Filtro por curso
             val matchesCourse = selectedCourse?.let {
@@ -436,27 +429,26 @@ fun AllActividades(
                 gruposDelCurso.any { grupoParticipante ->
                     grupoParticipante.actividades.id == actividad.id
                 }
-            } ?: true
+            } ?: true // Si no se selecciona un curso, no se filtra
 
             // Todos los filtros
             matchesState && matchesSearchQuery && matchesCourse && matchesDate
         }
     }
 
-    // Carga las actividades y grupos participantes en un hilo secundario
-    LaunchedEffect(selectedFilter, searchQuery, selectedDate, selectedCourse) {
+    // Cargar las actividades y grupos participantes
+    LaunchedEffect(selectedFilter, searchQuery, selectedDate, selectedCourse, selectedState) {
         withContext(Dispatchers.IO) {
             try {
                 // Realizamos las peticiones a la API
                 val response = RetrofitClient.instance.getActividades().execute()
-                val groupsResponse = RetrofitClient.instance.getGrupoParticipantes().execute() // Obtener los grupos
+                val groupsResponse = RetrofitClient.instance.getGrupoParticipantes().execute()
                 if (response.isSuccessful && groupsResponse.isSuccessful) {
-                    // Filtramos las actividades
                     val filteredActividades = filterActividades(
                         response.body() ?: emptyList(),
                         groupsResponse.body() ?: emptyList(),
                         selectedCourse,
-                        selectedFilter // Asegúrate de pasar también el estado seleccionado si es necesario
+                        selectedState
                     )
                     actividades.clear()
                     actividades.addAll(filteredActividades)
@@ -469,6 +461,45 @@ fun AllActividades(
                 withContext(Dispatchers.Main) {
                     isLoading.value = false
                 }
+            }
+        }
+    }
+
+
+
+    // Comprobamos si no hay actividades y mostramos el mensaje
+    if (isLoading.value) {
+        //CircularProgressIndicator(modifier = Modifier.fillMaxSize())
+    } else if (actividades.isEmpty() && errorMessage.value == null) {
+        // Mostramos el mensaje si no hay actividades
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "No hay actividades con ese filtro.",
+                color = Color.Gray,
+                style = MaterialTheme.typography.titleLarge
+            )
+        }
+    } else if (errorMessage.value != null) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = errorMessage.value ?: "",
+                color = Color.Red,
+                style = MaterialTheme.typography.titleLarge
+            )
+        }
+    } else {
+        LazyColumn {
+            items(actividades) { actividad ->
+                // Mostrar cada actividad
+
             }
         }
     }
