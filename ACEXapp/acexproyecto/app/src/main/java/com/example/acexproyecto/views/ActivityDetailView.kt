@@ -295,8 +295,6 @@ fun ActivityDetailContent(
         }
 
         item {
-
-
             LazyRow(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -328,8 +326,10 @@ fun ActivityDetailContent(
                             .size(120.dp)
                             .padding(end = 8.dp)
                             .clickable {
-                                updatedDescription = photo.descripcion ?: ""
-                                showImagePopup = true to photo
+                                if (canEdit) {
+                                    updatedDescription = photo.descripcion ?: ""
+                                    showImagePopup = true to photo
+                                }
                             }
                     ) {
                         Image(
