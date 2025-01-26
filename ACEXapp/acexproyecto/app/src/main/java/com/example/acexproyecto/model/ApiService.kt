@@ -9,6 +9,7 @@ package com.example.appacex.model
 
 import com.example.acexproyecto.model.GrupoParticipanteResponse
 import com.example.acexproyecto.model.GrupoResponse
+import com.example.acexproyecto.model.LocalizacionResponse
 import com.example.acexproyecto.model.PhotoResponse
 import com.example.acexproyecto.model.ProfesorParticipanteResponse
 import com.example.acexproyecto.model.ProfesorResponsableResponse
@@ -67,7 +68,6 @@ interface ApiService {
         @Query("descripcion") descripcion: String
     ): Call<Void>
 
-
     @GET("api/foto")
     fun getFotos(): Call<List<PhotoResponse>>
 
@@ -80,7 +80,13 @@ interface ApiService {
         @Body photo: PhotoResponse
     ): Response<Void>
 
+    @GET("api/localizacion")
+    fun getLocalizaciones(): Call<List<LocalizacionResponse>>
 
+    @PUT("api/localizacion/{id}")
+    suspend fun updateLocalizaciones(@Path("id") id: Int, @Body localizacion: LocalizacionResponse): Response<Void>
 
+    @POST("api/localizacion")
+    suspend fun addLocalizacion(@Body localizacion: LocalizacionResponse): Response<Void>
 }
 

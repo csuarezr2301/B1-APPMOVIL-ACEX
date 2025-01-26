@@ -84,15 +84,16 @@ import retrofit2.Call
 import retrofit2.Callback
 import java.io.ByteArrayOutputStream
 import java.util.Calendar
-import androidx.compose.material3.ExperimentalMaterial3Api
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.pm.PackageManager
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
+import com.example.acexproyecto.model.LocalizacionResponse
 import com.example.acexproyecto.model.ProfesorParticipanteResponse
 import com.example.acexproyecto.objetos.Usuario
 import com.google.android.gms.maps.model.MapStyleOptions
@@ -110,6 +111,9 @@ var deletedGrupoParticipantes by mutableStateOf<List<GrupoParticipanteResponse>>
 var deletedProfesores by mutableStateOf<List<ProfesorParticipanteResponse>>(emptyList())
 var imagesActividad by mutableStateOf<List<PhotoResponse>>(emptyList())
 var deletedFotos by mutableStateOf<List<PhotoResponse>>(emptyList())
+var localizaciones by mutableStateOf<List<LocalizacionResponse>>(emptyList())
+var newLocalizaciones by mutableStateOf<List<LatLng>>(emptyList())
+var deletedLocalizaciones by mutableStateOf<List<LocalizacionResponse>>(emptyList())
 
 @Composable
 fun ActivityDetailView(navController: NavController, activityId: String, isDarkTheme: Boolean) {
@@ -1377,6 +1381,7 @@ fun MapaActividad(
 
     var markerPosition by remember { mutableStateOf(activityLocation) }
     var isMarkerDraggable by remember { mutableStateOf(false) }
+    var selectedMarker by remember { mutableStateOf<LocalizacionResponse?>(null) }
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(markerPosition, 10f)
     }
@@ -1385,26 +1390,58 @@ fun MapaActividad(
         MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style_dark)
     }
 
+    LaunchedEffect(actividad) {
+        if (actividad != null) {
+            withContext(Dispatchers.IO) {
+                try {
+                    val response = RetrofitClient.instance.getLocalizaciones().execute()
+                    if (response.isSuccessful) {
+                        localizaciones =
+                            response.body()?.filter { it.idActividad.id == actividad.id }
+                                ?: emptyList()
+                    }
+                    localizaciones.forEach { localizacion ->
+                    }
+                } catch (e: Exception) {
+                    Log.e("MapaActividad", "Error fetching localizaciones", e)
+                }
+            }
+        } else {
+            Log.e("MapaActividad", "Actividad is null")
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             properties = MapProperties(mapStyleOptions = if (isDarkTheme) mapStyleOptions else null)
         ) {
-            Marker(
-                state = markerState,
-                title = actividad?.titulo ?: "IES Miguel Herrero Pereda",
-                snippet = actividad?.descripcion ?: "Torrelavega",
-                draggable = isMarkerDraggable,
-                onClick = {
-                    if (isMarkerDraggable) {
-                        markerPosition = it.position
-                        markerState.position = it.position
+            localizaciones.forEach { localizacion ->
+                Marker(
+                    state = rememberMarkerState(position = LatLng(localizacion.latitud, localizacion.longitud)),
+                    title = "Localización ${localizacion.id}",
+                    snippet = localizacion.comentario,
+                    draggable = isMarkerDraggable,
+                    onClick = {
+                        selectedMarker = localizacion
+                        true
                     }
-                    true
-                }
-            )
+                )
+            }
+
+            newLocalizaciones.forEach { latLng ->
+                Marker(
+                    state = rememberMarkerState(position = latLng),
+                    draggable = true,
+                    onClick = {
+                        selectedMarker = localizaciones.find { it.latitud == latLng.latitude && it.longitud == latLng.longitude }
+                        true
+                    }
+                )
+            }
         }
+
 
         Row(
             modifier = Modifier
@@ -1412,6 +1449,36 @@ fun MapaActividad(
                 .padding(4.dp)
         ) {
             if (canEdit) {
+                IconButton(onClick = {
+                    val newLocalizacion = LocalizacionResponse(
+                        id = 0,
+                        idActividad = actividad!!,
+                        latitud = 43.353,
+                        longitud = -4.064,
+                        comentario = "Nueva localización"
+                    )
+                    newLocalizaciones = newLocalizaciones + LatLng(newLocalizacion.latitud, newLocalizacion.longitud)
+                    Toast.makeText(
+                        context,
+                        "Nueva localización añadida",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }) {
+                    Box(
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f))
+                            .padding(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Añadir/Editar Marker",
+                            tint = if (isMarkerDraggable) Color.Red else TextPrimary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 IconButton(onClick = {
                     isMarkerDraggable = !isMarkerDraggable
                     if (isMarkerDraggable) {
@@ -1488,6 +1555,47 @@ fun MapaActividad(
                             tint = TextPrimary
                         )
                     }
+                }
+            }
+        }
+
+        if (selectedMarker != null) {
+            CustomInfoWindow(selectedMarker!!, onDataChanged, deletedLocalizaciones)
+        }
+    }
+}
+
+@Composable
+fun CustomInfoWindow(
+    marker: LocalizacionResponse,
+    onDataChanged: (Boolean) -> Unit,
+    markersDeleted: List<LocalizacionResponse>
+) {
+    Box(
+        modifier = Modifier
+            .background(Color.White.copy(alpha = 0.75f), shape = RoundedCornerShape(8.dp))
+            .padding(8.dp)
+    ) {
+        Column {
+            Text("ID: ${marker.id}", fontSize = 8.sp)
+            Text("Comentario: ${marker.comentario}", fontSize = 8.sp)
+            Row {
+                Button(
+                    onClick = {
+                        // Prepare marker for editing
+                    },
+                    modifier = Modifier.padding(end = 4.dp)
+                ) {
+                    Text("Seleccionar", fontSize = 8.sp)
+                }
+                Button(
+                    onClick = {
+                        // Confirm deletion
+                        deletedLocalizaciones = markersDeleted + marker
+                        onDataChanged(true)
+                    }
+                ) {
+                    Text("Borrar", fontSize = 8.sp)
                 }
             }
         }
@@ -1606,6 +1714,26 @@ fun BotonGuardar(isEnabled: Boolean, onSaveComplete: () -> Unit) {
                             }
                         }
 
+                        localizaciones.forEach() { localizacion ->
+                            val response = RetrofitClient.instance.updateLocalizaciones(localizacion.id, localizacion)
+                            if (!response.isSuccessful) {
+                                Log.e("ActivityDetailView", "Error updating localizacion: ${response.code()}")
+                            }
+                        }
+
+                        newLocalizaciones.forEach() { localizacion ->
+                            val newLocalizacion = LocalizacionResponse(
+                                id = 0,
+                                idActividad = activity!!,
+                                latitud = localizacion.latitude,
+                                longitud = localizacion.longitude,
+                                comentario = activity?.comentarios ?: ""
+                            )
+                            val response = RetrofitClient.instance.addLocalizacion(newLocalizacion)
+                            if (!response.isSuccessful) {
+                                Log.e("ActivityDetailView", "Error adding localizacion: ${response.code()}")
+                            }
+                        }
 
                         withContext(Dispatchers.Main) {
                             Toast.makeText(context, "Datos guardados correctamente", Toast.LENGTH_SHORT).show()
