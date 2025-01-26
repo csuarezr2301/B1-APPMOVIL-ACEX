@@ -44,6 +44,9 @@ interface ApiService {
     @DELETE("api/profParticipante/{id}")
     suspend fun deleteProfesorParticipante(@Path("id") id: Int): Response<Void>
 
+    @GET("api/profResponsable")
+    fun getProfesoresResponsables(): Call<List<ProfesorResponsableResponse>>
+
     @GET("api/grupo")
     fun getGrupos(): Call<List<GrupoResponse>>
 
