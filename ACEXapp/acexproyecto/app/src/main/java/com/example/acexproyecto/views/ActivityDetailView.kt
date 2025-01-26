@@ -91,6 +91,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
+import com.example.acexproyecto.objetos.Usuario
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.MapProperties
 import java.text.SimpleDateFormat
@@ -110,6 +111,7 @@ var deletedFotos by mutableStateOf<List<PhotoResponse>>(emptyList())
 @Composable
 fun ActivityDetailView(navController: NavController, activityId: String, isDarkTheme: Boolean) {
     var isDataChanged by remember { mutableStateOf(false) }
+    var isAdminOrSolicitante by remember { mutableStateOf(false) }
 
     LaunchedEffect(activityId) {
         selectedImages = emptyList()
@@ -118,6 +120,8 @@ fun ActivityDetailView(navController: NavController, activityId: String, isDarkT
                 val response = RetrofitClient.instance.getActividades().execute()
                 if (response.isSuccessful) {
                     activity = response.body()?.find { it.id == activityId.toInt() }
+                    isAdminOrSolicitante = Usuario.profesor?.rol in listOf("ADM", "ED") || Usuario.profesor?.uuid == activity?.solicitante?.uuid
+                    Log.d("ActivityDetailView", "Activity: $isAdminOrSolicitante")
                 }
                 val grupoResponse = RetrofitClient.instance.getGrupoParticipantes().execute()
                 if (grupoResponse.isSuccessful) {
@@ -156,7 +160,8 @@ fun ActivityDetailView(navController: NavController, activityId: String, isDarkT
                 navController = navController,
                 modifier = Modifier.padding(paddingValues),
                 onDataChanged = { isDataChanged = it },
-                isDarkTheme = isDarkTheme
+                isDarkTheme = isDarkTheme,
+                canEdit = isAdminOrSolicitante
             )
             Box(
                 modifier = Modifier
@@ -178,7 +183,8 @@ fun ActivityDetailContent(
     navController: NavController,
     modifier: Modifier = Modifier,
     onDataChanged: (Boolean) -> Unit,
-    isDarkTheme: Boolean
+    isDarkTheme: Boolean,
+    canEdit: Boolean
 ) {
     // Variables de estado y configuración
     var isDialogVisible by remember { mutableStateOf(false) }
@@ -222,14 +228,16 @@ fun ActivityDetailContent(
                     color = TextPrimary,
                     modifier = Modifier.weight(1f)
                 )
-                IconButton(onClick = {
-                    isDialogVisible = true
-                }) {
-                    Icon(
-                        imageVector = Icons.Filled.Edit,
-                        contentDescription = "Editar",
-                        tint = TextPrimary
-                    )
+                if (canEdit) {
+                    IconButton(onClick = {
+                        isDialogVisible = true
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.Edit,
+                            contentDescription = "Editar",
+                            tint = TextPrimary
+                        )
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -292,18 +300,20 @@ fun ActivityDetailContent(
             LazyRow(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                item {
-                    Icon(
-                        painter = painterResource(id = R.drawable.foto),
-                        contentDescription = "Seleccionar foto",
-                        tint = ButtonPrimary,
-                        modifier = Modifier
-                            .size(120.dp)
-                            .padding(end = 8.dp)
-                            .clickable {
-                                isPopupVisible = true
-                            }
-                    )
+                if (canEdit) {
+                    item {
+                        Icon(
+                            painter = painterResource(id = R.drawable.foto),
+                            contentDescription = "Seleccionar foto",
+                            tint = ButtonPrimary,
+                            modifier = Modifier
+                                .size(120.dp)
+                                .padding(end = 8.dp)
+                                .clickable {
+                                    isPopupVisible = true
+                                }
+                        )
+                    }
                 }
 
                 items(imagesActividad) { photo ->
@@ -390,15 +400,17 @@ fun ActivityDetailContent(
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
-                AlumnosAsistentes(gruposAsistentes = grupoParticipantes, onDataChanged)
+                AlumnosAsistentes(gruposAsistentes = grupoParticipantes, onDataChanged, canEdit)
                 Spacer(modifier = Modifier.height(8.dp))
-                ProfesoresAsistentes(profAsistentes, onDataChanged)
+                ProfesoresAsistentes(profAsistentes, onDataChanged, canEdit)
                 Spacer(modifier = Modifier.height(15.dp))
                 Observaciones(actividad = activity, onUpdateActividad = { updatedActividad ->
                     // Update the actividad state with the new values
                     activity = updatedActividad
                     onDataChanged(true)
-                })
+                },
+                    canEdit = canEdit
+                )
             }
         }
 
@@ -425,7 +437,8 @@ fun ActivityDetailContent(
                     actividad = activity,
                     modifier = Modifier.fillMaxSize(),
                     onDataChanged = onDataChanged,
-                    isDarkTheme = isDarkTheme
+                    isDarkTheme = isDarkTheme,
+                    canEdit = canEdit
                 )
             }
         }
@@ -570,7 +583,7 @@ fun ActivityDetailContent(
 }
 
 @Composable
-fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataChanged: (Boolean) -> Unit) {
+fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataChanged: (Boolean) -> Unit, canEdit: Boolean) {
     var currentlyEditingId by remember { mutableStateOf<Int?>(null) }
     var totalParticipantes by remember { mutableStateOf(0) }
     var exNumParticipantes by remember { mutableStateOf(0) }
@@ -605,13 +618,15 @@ fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataC
             modifier = Modifier
                 .weight(0.15f)
         )
-        IconButton(onClick = { isPopupVisible = true }) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add Group",
-                tint = TextPrimary,
-                modifier = Modifier.weight(0.05f)
-            )
+        if (canEdit) {
+            IconButton(onClick = { isPopupVisible = true }) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add Group",
+                    tint = TextPrimary,
+                    modifier = Modifier.weight(0.05f)
+                )
+            }
         }
     }
 
@@ -629,20 +644,23 @@ fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataC
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            IconButton(onClick = {
-                deletedGrupoParticipantes = deletedGrupoParticipantes + grupoParticipante
-                grupoParticipantes = grupoParticipantes.filterNot { it.grupo.id == grupoParticipante.grupo.id }
-                selectedGrupos = selectedGrupos - grupoParticipante.grupo.codGrupo
-                totalParticipantes = grupoParticipantes.sumOf { it.numParticipantes }
-                editedNumParticipantesMap = editedNumParticipantesMap - grupoParticipante.id
-                onDataChanged(true)
-            }) {
-                Icon(
-                    imageVector = Icons.Default.Clear,
-                    contentDescription = "Quitar Grupo",
-                    tint = TextPrimary,
-                    modifier = Modifier.weight(0.05f)
-                )
+            if (canEdit) {
+                IconButton(onClick = {
+                    deletedGrupoParticipantes = deletedGrupoParticipantes + grupoParticipante
+                    grupoParticipantes =
+                        grupoParticipantes.filterNot { it.grupo.id == grupoParticipante.grupo.id }
+                    selectedGrupos = selectedGrupos - grupoParticipante.grupo.codGrupo
+                    totalParticipantes = grupoParticipantes.sumOf { it.numParticipantes }
+                    editedNumParticipantesMap = editedNumParticipantesMap - grupoParticipante.id
+                    onDataChanged(true)
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Quitar Grupo",
+                        tint = TextPrimary,
+                        modifier = Modifier.weight(0.05f)
+                    )
+                }
             }
             Text(
                 text = grupoParticipante.grupo.codGrupo,
@@ -700,22 +718,24 @@ fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataC
                 color = TextPrimary,
                 modifier = Modifier.weight(0.15f)
             )
-            IconButton(onClick = {
-                if (isEditing) {
-                    if (exNumParticipantes.toString() != editedNumParticipantes) {
-                        onDataChanged(true)
+            if (canEdit) {
+                IconButton(onClick = {
+                    if (isEditing) {
+                        if (exNumParticipantes.toString() != editedNumParticipantes) {
+                            onDataChanged(true)
+                        }
+                        currentlyEditingId = null
+                    } else {
+                        exNumParticipantes = grupoParticipante.numParticipantes
+                        currentlyEditingId = grupoParticipante.id
                     }
-                    currentlyEditingId = null
-                } else {
-                    exNumParticipantes = grupoParticipante.numParticipantes
-                    currentlyEditingId = grupoParticipante.id
+                }) {
+                    Icon(
+                        imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
+                        contentDescription = if (isEditing) "Confirm" else "Edit",
+                        tint = TextPrimary
+                    )
                 }
-            }) {
-                Icon(
-                    imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
-                    contentDescription = if (isEditing) "Confirm" else "Edit",
-                    tint = TextPrimary
-                )
             }
         }
     }
@@ -836,7 +856,7 @@ fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataC
 }
 
 @Composable
-fun ProfesoresAsistentes(profesAsistentes: List<ProfesorParticipanteResponse>, onDataChanged: (Boolean) -> Unit) {
+fun ProfesoresAsistentes(profesAsistentes: List<ProfesorParticipanteResponse>, onDataChanged: (Boolean) -> Unit, canEdit: Boolean) {
     var profesoresLista by remember { mutableStateOf<List<ProfesorResponse>>(emptyList()) } // todos los profesores
     //var profesoresAsistentes by remember {mutableStateOf(profAsistentes)}
     var isLoadingProfesores by remember { mutableStateOf(true) }
@@ -887,12 +907,14 @@ fun ProfesoresAsistentes(profesAsistentes: List<ProfesorParticipanteResponse>, o
                 color = TextPrimary,
                 modifier = Modifier.weight(1f)
             )
-            IconButton(onClick = { isDialogVisible = true }) {
-                Icon(
-                    imageVector = Icons.Filled.Edit,
-                    contentDescription = "Editar",
-                    tint = TextPrimary
-                )
+            if (canEdit) {
+                IconButton(onClick = { isDialogVisible = true }) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = "Editar",
+                        tint = TextPrimary
+                    )
+                }
             }
         }
 
@@ -1052,7 +1074,7 @@ fun areGruposEqual(
 }
 
 @Composable
-fun Observaciones(actividad: ActividadResponse?, onUpdateActividad: (ActividadResponse) -> Unit) {
+fun Observaciones(actividad: ActividadResponse?, onUpdateActividad: (ActividadResponse) -> Unit, canEdit: Boolean) {
     var transporte by remember { mutableStateOf(actividad?.comentTransporte ?: "") }
     var alojamiento by remember { mutableStateOf(actividad?.comentAlojamiento ?: "") }
     var comentarios by remember { mutableStateOf(actividad?.comentarios ?: "") }
@@ -1090,12 +1112,14 @@ fun Observaciones(actividad: ActividadResponse?, onUpdateActividad: (ActividadRe
             color = TextPrimary,
             modifier = Modifier.weight(1f)
         )
-        IconButton(onClick = { isDialogVisible = true }) {
-            Icon(
-                imageVector = Icons.Filled.Edit,
-                contentDescription = "Editar",
-                tint = TextPrimary
-            )
+        if (canEdit) {
+            IconButton(onClick = { isDialogVisible = true }) {
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = "Editar",
+                    tint = TextPrimary
+                )
+            }
         }
     }
     Text(
@@ -1376,14 +1400,15 @@ fun MapaActividad(
     actividad: ActividadResponse?,
     modifier: Modifier = Modifier,
     onDataChanged: (Boolean) -> Unit,
-    isDarkTheme: Boolean
+    isDarkTheme: Boolean,
+    canEdit: Boolean
 ) {
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val activityLocation = if (actividad?.latitud != null && actividad.longitud != null) {
-        LatLng(43.353, -4.064)
+        LatLng(actividad.latitud, actividad.longitud)
     } else {
-        LatLng(actividad!!.latitud, actividad.longitud)
+        LatLng(43.353, -4.064)
     }
 
     var markerPosition by remember { mutableStateOf(activityLocation) }
@@ -1423,56 +1448,83 @@ fun MapaActividad(
                 .align(Alignment.TopEnd)
                 .padding(4.dp)
         ) {
-            IconButton(onClick = {
-                isMarkerDraggable = !isMarkerDraggable
-                if (isMarkerDraggable) {
-                    Toast.makeText(context, "Ahora puede mover el marcador del mapa, pulse el botón de nuevo para terminar", Toast.LENGTH_LONG).show()
-                } else {
-                    actividad?.latitud = markerPosition.latitude
-                    actividad?.longitud = markerPosition.longitude
-                    onDataChanged(true)
-                }
-            }) {
-                Box(
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f))
-                        .padding(4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Añadir/Editar Marker",
-                        tint = if (isMarkerDraggable) Color.Red else TextPrimary
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            IconButton(onClick = {
-                if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-                        location?.let {
-                            markerPosition = LatLng(it.latitude, it.longitude)
-                            markerState.position = LatLng(it.latitude, it.longitude)
-                            actividad?.latitud = it.latitude
-                            actividad?.longitud = it.longitude
-                            cameraPositionState.position = CameraPosition.fromLatLngZoom(markerPosition, 10f)
-                            Toast.makeText(context, "Localización: ${it.latitude}, ${it.longitude}", Toast.LENGTH_SHORT).show()
-                            onDataChanged(true)
-                        } ?: run {
-                            Toast.makeText(context, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show()
-                        }
+            if (canEdit) {
+                IconButton(onClick = {
+                    isMarkerDraggable = !isMarkerDraggable
+                    if (isMarkerDraggable) {
+                        Toast.makeText(
+                            context,
+                            "Ahora puede mover el marcador del mapa, pulse el botón de nuevo para terminar",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        actividad?.latitud = markerPosition.latitude
+                        actividad?.longitud = markerPosition.longitude
+                        onDataChanged(true)
                     }
-                } else {
-                    ActivityCompat.requestPermissions(context as Activity, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
+                }) {
+                    Box(
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f))
+                            .padding(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Añadir/Editar Marker",
+                            tint = if (isMarkerDraggable) Color.Red else TextPrimary
+                        )
+                    }
                 }
-            }) {
-                Box(
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f))
-                        .padding(4.dp)
-                ) {
-                    Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Usar Mi Localización", tint = TextPrimary)
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                IconButton(onClick = {
+                    if (ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                            location?.let {
+                                markerPosition = LatLng(it.latitude, it.longitude)
+                                markerState.position = LatLng(it.latitude, it.longitude)
+                                actividad?.latitud = it.latitude
+                                actividad?.longitud = it.longitude
+                                cameraPositionState.position =
+                                    CameraPosition.fromLatLngZoom(markerPosition, 10f)
+                                Toast.makeText(
+                                    context,
+                                    "Localización: ${it.latitude}, ${it.longitude}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                onDataChanged(true)
+                            } ?: run {
+                                Toast.makeText(
+                                    context,
+                                    "No se pudo obtener la ubicación",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    } else {
+                        ActivityCompat.requestPermissions(
+                            context as Activity,
+                            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                            1
+                        )
+                    }
+                }) {
+                    Box(
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f))
+                            .padding(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = "Usar Mi Localización",
+                            tint = TextPrimary
+                        )
+                    }
                 }
             }
         }
