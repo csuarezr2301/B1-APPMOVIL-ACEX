@@ -20,6 +20,12 @@ data class ProfesorParticipanteResponse(
     val profesor:ProfesorResponse
 )
 
+data class ProfesorResponsableResponse(
+    val id: Int,
+    val actividad:ActividadResponse,
+    val profesor:ProfesorResponse
+)
+
 data class Departamento(
     val id: Int,
     val codigo: String,

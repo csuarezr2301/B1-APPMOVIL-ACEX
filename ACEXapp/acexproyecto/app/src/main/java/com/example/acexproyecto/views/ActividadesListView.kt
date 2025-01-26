@@ -16,14 +16,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.example.acexproyecto.objetos.Usuario
 import com.example.appacex.model.ActividadResponse
 import com.example.appacex.model.RetrofitClient
 import kotlinx.coroutines.Dispatchers
@@ -34,16 +37,42 @@ fun ActividadesListView( navController: NavHostController ) {
     val actividades = remember { mutableStateListOf<ActividadResponse>() }
     val isLoading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
+    var filteredActividades by remember { mutableStateOf<List<ActividadResponse>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             try {
+                val uniqueActivityIds = mutableSetOf<Int>()
+
                 val response = RetrofitClient.instance.getActividades().execute()
                 if (response.isSuccessful) {
                     val approvedActividades = response.body()?.filter { it.estado == "APROBADA" } ?: emptyList()
                     actividades.addAll(approvedActividades)
                 } else {
                     errorMessage.value = "Error: ${response.code()}"
+                }
+                val responseProfes = RetrofitClient.instance.getProfesoresparticipantes().execute()
+                if (responseProfes.isSuccessful) {
+                    val profesorParticipantes = responseProfes.body() ?: emptyList()
+                    filteredActividades = actividades.filter { actividad ->
+                        profesorParticipantes.any {
+                            it.actividad.id == actividad.id && it.profesor.uuid == Usuario.profesor?.uuid
+                        }.also { matches ->
+                            if (matches) uniqueActivityIds.add(actividad.id)
+                        }
+                    }
+                }
+
+                val responseProfesResponsables = RetrofitClient.instance.getProfesoresparticipantes().execute()
+                if (responseProfesResponsables.isSuccessful) {
+                    val profesorParticipantes = responseProfesResponsables.body() ?: emptyList()
+                    filteredActividades += actividades.filter { actividad ->
+                        profesorParticipantes.any {
+                            it.actividad.id == actividad.id && it.profesor.uuid == Usuario.profesor?.uuid
+                        } && !uniqueActivityIds.contains(actividad.id)
+                    }.onEach { actividad ->
+                        uniqueActivityIds.add(actividad.id)
+                    }
                 }
             } catch (e: Exception) {
                 errorMessage.value = "Exception: ${e.message}"
@@ -73,7 +102,11 @@ fun ActividadesListView( navController: NavHostController ) {
                     }
                 } else {
                     LazyColumn(modifier = Modifier.weight(1f)) {
-                        items(actividades) { actividad ->
+                        if (Usuario.profesor?.rol == "ED" || Usuario.profesor?.rol == "ADM") {
+                            filteredActividades =  actividades
+                        }
+
+                        items(filteredActividades) { actividad ->
                             ActividadCard(actividad, navController)
                         }
                     }

@@ -44,6 +44,9 @@ interface ApiService {
     @DELETE("api/profParticipante/{id}")
     suspend fun deleteProfesorParticipante(@Path("id") id: Int): Response<Void>
 
+    @GET("api/profResponsable")
+    fun getProfesoresResponsables(): Call<List<ProfesorResponsableResponse>>
+
     @GET("api/grupo")
     fun getGrupos(): Call<List<GrupoResponse>>
 
@@ -55,11 +58,20 @@ interface ApiService {
         @Query("descripcion") descripcion: String
     ): Call<Void>
 
+
     @GET("api/foto")
     fun getFotos(): Call<List<PhotoResponse>>
 
     @DELETE("api/foto/{id}")
     suspend fun deleteFoto(@Path("id") id: Int): Response<Void>
+
+    @PUT("api/foto/{id}")
+    suspend fun updateFoto(
+        @Path("id") id: Int,
+        @Body photo: PhotoResponse
+    ): Response<Void>
+
+
 
 }
 

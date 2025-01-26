@@ -4,7 +4,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.http.HttpException
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresExtension
 import com.example.acexproyecto.objetos.Usuario
 import com.example.appacex.model.ProfesorResponse
 import com.example.appacex.model.RetrofitClient
@@ -64,6 +66,7 @@ fun fetchUserProfile(context: Context, authenticationResult: IAuthenticationResu
     }
 }
 
+@RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
 suspend fun checkProfessorEmail(email: String, callback: (Boolean) -> Unit) {
     withContext(Dispatchers.IO) {
         try {
@@ -75,8 +78,7 @@ suspend fun checkProfessorEmail(email: String, callback: (Boolean) -> Unit) {
                 }
                 val isProfessor = profesor != null
                 if (isProfessor) {
-                    Usuario.rol = profesor?.rol ?: ""
-                    Usuario.departamento = profesor?.depart
+                    Usuario.profesor = profesor
                 }
                 callback(isProfessor)
             } else {

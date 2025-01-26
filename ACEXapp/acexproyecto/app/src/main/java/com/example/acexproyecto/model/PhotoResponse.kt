@@ -6,6 +6,6 @@ import com.example.appacex.model.ProfesorResponse
 data class PhotoResponse (
     val id: Int,
     val urlFoto: String?,
-    val descripcion: String,
+    var descripcion: String,
     val actividad: ActividadResponse
 )
