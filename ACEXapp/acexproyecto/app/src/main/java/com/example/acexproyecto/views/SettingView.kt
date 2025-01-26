@@ -1,3 +1,10 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 package com.example.acexproyecto.views
 
 import android.annotation.SuppressLint
@@ -14,10 +21,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -25,12 +30,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
 import com.example.acexproyecto.objetos.Usuario
-import com.example.acexproyecto.ui.theme.* // Asegúrate de importar tus colores
+import com.example.acexproyecto.ui.theme.*
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun SettingsView(navController: NavController, isDarkMode: Boolean, onThemeChanged: (Boolean) -> Unit) {
-    // Estructura principal con la barra inferior
     Scaffold(
         topBar = {TopBar(navController)},
         content = { paddingValues ->
@@ -58,9 +62,8 @@ fun SettingsViewapp(
     isDarkMode: Boolean,
     onThemeChanged: (Boolean) -> Unit
 ) {
-    // Variables para las opciones de ajustes
-    val notificationsState = remember { mutableStateOf(true) }  // Notificaciones
-    var showDialog by remember { mutableStateOf(false) } // Estado para mostrar el diálogo de confirmación de cerrar sesión
+    val notificationsState = remember { mutableStateOf(true) }
+    var showDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -77,7 +80,6 @@ fun SettingsViewapp(
             color = TextPrimary
         )
 
-        // Opción de notificaciones
         SettingsOption(
             label = "Notificaciones",
             description = "Recibe notificaciones de la app",
@@ -87,28 +89,26 @@ fun SettingsViewapp(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Opción para cambiar tema
         SettingsOption(
             label = "Modo oscuro",
             description = "Cambiar entre modo claro y oscuro",
             isChecked = isDarkMode,
             onCheckedChange = {
-                onThemeChanged(it) // Actualiza el estado del tema
+                onThemeChanged(it)
             }
         )
 
     }
 
-    // Mostrar el diálogo de confirmación si showDialog es verdadero
     if (showDialog) {
         AlertDialog(
-            onDismissRequest = { showDialog = false }, // Si el usuario toca fuera del diálogo, lo cierra
+            onDismissRequest = { showDialog = false },
             title = { Text("¿Estás seguro que quieres cerrar sesión?", color = TextPrimary) },
             confirmButton = {
                 Button(
                     onClick = {
                         showDialog = false
-                        navController.navigate("principal") // Navegar a la pantalla de login
+                        navController.navigate("principal")
                     }
                 ) {
                     Text("Sí", color = Color.White)
@@ -145,9 +145,9 @@ fun SettingsOption(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Accent, // Usar el color Accent para el "thumb" del switch
+                checkedThumbColor = Accent,
                 uncheckedThumbColor = Color.Gray,
-                checkedTrackColor = Accent.copy(alpha = 0.3f), // Track más suave para el estado activado
+                checkedTrackColor = Accent.copy(alpha = 0.3f),
                 uncheckedTrackColor = Color.LightGray,
                 uncheckedBorderColor = Color.Transparent
             )
@@ -162,15 +162,14 @@ fun UserInfo() {
             text = "Información del Usuario",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            color = TextPrimary, // Usar color de texto primario
-            fontSize = 22.sp, // Aumentar el tamaño de la fuente
+            color = TextPrimary,
+            fontSize = 22.sp,
             modifier = Modifier
-                .fillMaxWidth() // Asegura que el modificador ocupe todo el ancho disponible
+                .fillMaxWidth()
                 .padding(bottom = 20.dp)
-                .wrapContentWidth(Alignment.CenterHorizontally) // Centra el texto horizontalmente
+                .wrapContentWidth(Alignment.CenterHorizontally)
         )
 
-        // Imagen de perfil
         Box(
             modifier = Modifier
                 .size(100.dp)
@@ -203,22 +202,21 @@ fun UserInfo() {
             }
         }
 
-        // Información básica (Nombre, Correo)
         Column(
             modifier = Modifier
                 .padding(top = 16.dp)
                 .align(Alignment.CenterHorizontally)
         ) {
             Text(
-                text = Usuario.displayName, // Nombre del usuario
+                text = Usuario.displayName,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary // Usar color de texto primario
+                color = TextPrimary
             )
             Text(
-                text = Usuario.account, // Correo del usuario
+                text = Usuario.account,
                 fontSize = 16.sp,
-                color = TextPrimary // Usar color de texto primario
+                color = TextPrimary
             )
         }
     }
@@ -227,7 +225,6 @@ fun UserInfo() {
 @Composable
 fun UserDetails() {
     Column(modifier = Modifier.fillMaxWidth()) {
-        // Información detallada (Contraseña, Rol, Activo, Departamento)
 
         UserDetailField(label = "Rol", value = getRoleDisplayName(Usuario.profesor?.rol ?: ""))
         Spacer(modifier = Modifier.height(10.dp))
@@ -241,7 +238,7 @@ fun UserDetailField(label: String, value: String) {
         Text(text = label,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
-            color = TextPrimary) // Usar color de texto primario
+            color = TextPrimary)
 
         Spacer(modifier = Modifier.height(4.dp))
 
@@ -249,7 +246,7 @@ fun UserDetailField(label: String, value: String) {
             text = value,
             fontSize = 18.sp,
             modifier = Modifier.fillMaxWidth(),
-            color = TextPrimary // Usar color de texto primario
+            color = TextPrimary
         )
     }
 }
@@ -261,11 +258,4 @@ fun getRoleDisplayName(role: String): String {
         "ADM" -> "Admin"
         else -> "Desconocido"
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun SettingsScreenPreview() {
-    val navController = rememberNavController()
-    SettingsView(navController = navController, isDarkMode = false) { }
 }

@@ -1,3 +1,10 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 package com.example.acexproyecto.camara
 
 import android.Manifest
@@ -5,7 +12,6 @@ import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -27,16 +33,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.core.app.ActivityCompat
 import androidx.core.app.ComponentActivity
 import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
-import com.example.acexproyecto.views.BottomDetailBar
-import com.example.acexproyecto.views.TopBar
-import java.util.concurrent.Executor
-import java.util.concurrent.Executors
-
-
 
 @SuppressLint("RestrictedApi")
 @Composable
@@ -44,7 +43,6 @@ fun CamaraView(onPhotoTaken: (Uri) -> Unit, context: Context, navController: Nav
     var showDialog by remember { mutableStateOf(false) }
     var photoUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Solicitar permisos
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
         onResult = { permissions ->
@@ -52,10 +50,8 @@ fun CamaraView(onPhotoTaken: (Uri) -> Unit, context: Context, navController: Nav
                 permissions[Manifest.permission.WRITE_EXTERNAL_STORAGE] == true &&
                 permissions[Manifest.permission.READ_EXTERNAL_STORAGE] == true
             ) {
-                // Permisos concedidos, puedes iniciar la cámara
                 Toast.makeText(context, "Permisos concedidos", Toast.LENGTH_SHORT).show()
             } else {
-                // Permisos denegados
                 Toast.makeText(context, "Permisos denegados", Toast.LENGTH_SHORT).show()
             }
         }
@@ -80,7 +76,6 @@ fun CamaraView(onPhotoTaken: (Uri) -> Unit, context: Context, navController: Nav
         modifier = Modifier
             .fillMaxSize()
     ) {
-        // Vista previa de la cámara ocupa toda la pantalla
         AndroidView(
             factory = { context ->
                 val previewView = PreviewView(context).apply {
@@ -112,14 +107,12 @@ fun CamaraView(onPhotoTaken: (Uri) -> Unit, context: Context, navController: Nav
         }
     }
 
-    // Mostrar el diálogo de confirmación con la foto
     if (showDialog && photoUri != null) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
             title = { Text("Guardar Foto") },
             text = {
                 Column {
-                    // Mostrar la foto tomada
                     photoUri?.let {
                         Image(
                             painter = rememberImagePainter(it),
@@ -147,7 +140,7 @@ fun CamaraView(onPhotoTaken: (Uri) -> Unit, context: Context, navController: Nav
                 TextButton(
                     onClick = {
                         showDialog = false
-                        photoUri = null // Reset photoUri to allow retaking the photo
+                        photoUri = null
                     }
                 ) {
                     Text("Tomar otra")
@@ -156,16 +149,10 @@ fun CamaraView(onPhotoTaken: (Uri) -> Unit, context: Context, navController: Nav
         )
     }
 
-    // Usamos LaunchedEffect para inicializar la cámara una vez que el composable se muestra
     LaunchedEffect(key1 = true) {
         try {
-            // Espera a que el proveedor de cámara esté listo
             val cameraProvider = cameraProviderFuture.get()
-
-            // Asegúrate de que la cámara esté vinculada correctamente
             cameraProvider.unbindAll()
-
-            // Configura la cámara con la vista previa y las capturas de imagen
             cameraProvider.bindToLifecycle(
                 context as ComponentActivity, cameraSelector, preview, imageCapture
             )
@@ -197,18 +184,15 @@ fun takePhoto(
         if (outputStream != null) {
             val outputOptions = ImageCapture.OutputFileOptions.Builder(outputStream).build()
 
-            // Tomamos la foto
             imageCapture.takePicture(
                 outputOptions,
                 ContextCompat.getMainExecutor(context),
                 object : ImageCapture.OnImageSavedCallback {
                     override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                        // Llamamos a la función `onPhotoTaken` con el URI de la foto tomada
                         onPhotoTaken(imageUri)
                     }
 
                     override fun onError(exception: ImageCaptureException) {
-                        // En caso de error, mostramos un mensaje
                         Toast.makeText(context, "Error al tomar la foto: ${exception.message}", Toast.LENGTH_SHORT).show()
                     }
                 }

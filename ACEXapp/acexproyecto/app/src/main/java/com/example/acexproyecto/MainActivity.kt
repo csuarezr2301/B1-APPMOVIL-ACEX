@@ -1,3 +1,10 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 package com.example.acexproyecto
 
 import android.os.Bundle
@@ -20,25 +27,19 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.e("MainActivity", "onCreate")
         FirebaseApp.initializeApp(this)
         db = FirebaseFirestore.getInstance()
-        Log.e("MainActivity", "Instancia obtenida")
         val onInitialized: () -> Unit = {
             setContent {
-                // Definir el estado para el modo oscuro
                 var isDarkMode by remember { mutableStateOf(false) }
 
-                // Función para cambiar el estado de isDarkMode
                 val onThemeChanged: (Boolean) -> Unit = { darkMode ->
                     isDarkMode = darkMode
                 }
 
-                // Crear el navController para la navegación
                 val navController = rememberNavController()
 
                 acexproyecto_BaseTheme(darkTheme = isDarkMode) {
-                    // Pasamos el navController, isDarkMode y onThemeChanged a NavManager
                     NavManager(
                         navController = navController,
                         isDarkMode = isDarkMode,

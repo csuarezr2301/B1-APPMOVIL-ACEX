@@ -1,3 +1,10 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 package com.example.appacex.model
 
 data class ActividadResponse(
@@ -23,5 +30,4 @@ data class ActividadResponse(
     val importePorAlumno: Double,
     var latitud: Double,
     var longitud: Double
-
 )

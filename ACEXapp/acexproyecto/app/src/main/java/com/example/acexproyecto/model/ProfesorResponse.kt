@@ -1,4 +1,13 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 package com.example.appacex.model
+
+import com.example.acexproyecto.model.Departamento
 
 data class ProfesorResponse(
     val uuid: String,
@@ -14,20 +23,5 @@ data class ProfesorResponse(
     val depart: Departamento
 )
 
-data class ProfesorParticipanteResponse(
-    val id: Int,
-    val actividad:ActividadResponse,
-    val profesor:ProfesorResponse
-)
 
-data class ProfesorResponsableResponse(
-    val id: Int,
-    val actividad:ActividadResponse,
-    val profesor:ProfesorResponse
-)
 
-data class Departamento(
-    val id: Int,
-    val codigo: String,
-    val nombre: String
-)

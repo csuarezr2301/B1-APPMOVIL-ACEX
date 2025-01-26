@@ -7,11 +7,8 @@
 
 package com.example.acexproyecto.model
 
-import com.example.appacex.model.ActividadResponse
-
-data class PhotoResponse (
+data class Departamento(
     val id: Int,
-    val urlFoto: String?,
-    var descripcion: String,
-    val actividad: ActividadResponse
+    val codigo: String,
+    val nombre: String
 )

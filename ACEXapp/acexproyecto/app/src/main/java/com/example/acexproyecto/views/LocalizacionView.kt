@@ -1,3 +1,10 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 package com.example.acexproyecto.views
 
 import android.annotation.SuppressLint
@@ -10,13 +17,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.acexproyecto.R
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.example.acexproyecto.ui.theme.*
 import com.example.appacex.model.ActividadResponse
 import com.example.appacex.model.RetrofitClient
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -32,19 +36,12 @@ import kotlinx.coroutines.withContext
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun LocalizacionView(navController: NavController, isDarkMode: Boolean) {
-    // Estructura principal con la barra inferior
     val isDarkTheme = isDarkMode
-    val colors = if (isDarkTheme) {
-        darkColorScheme()
-    } else {
-        lightColorScheme()
-    }
 
     Scaffold(
-        topBar = { TopBar(navController) }, // Barra superior con el logo
+        topBar = { TopBar(navController) },
 
         content = { paddingValues ->
-            // Pasamos los valores de padding a la vista del mapa para que no quede debajo de la barra inferior
             LocalView(modifier = Modifier.padding(paddingValues),
                 isDarkTheme = isDarkTheme) },
         bottomBar = { BottomDetailBar(navController) }
@@ -96,30 +93,4 @@ fun LocalView(modifier: Modifier = Modifier, isDarkTheme: Boolean) {
             }
         }
     }
-}
-
- /*
-
-    // Usamos un Box para organizar el mapa
-    Box(modifier = modifier.fillMaxSize()) {
-        // Mapa que ocupa toda la pantalla menos la barra inferior
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState,
-            properties = MapProperties(mapStyleOptions = if (isDarkTheme) mapStyleOptions else null)
-        ) {
-            Marker(
-                state = com.google.maps.android.compose.rememberMarkerState(position = torrelavega),
-                title = "Torrelavega",
-                snippet = "Cantabria"
-            )
-        }
-    }
-}*/
-
-@Preview(showBackground = true)
-@Composable
-fun MapScreenPreview() {
-    val navController = rememberNavController()
-    LocalizacionView(navController = navController, isDarkMode = true)
 }

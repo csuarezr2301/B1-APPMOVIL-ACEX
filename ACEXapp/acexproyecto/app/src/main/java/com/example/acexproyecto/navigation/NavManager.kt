@@ -1,14 +1,16 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 package com.example.acexproyecto.navigation
 
-import android.app.Activity
-import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.acexproyecto.camara.CamaraView
 import com.example.acexproyecto.objetos.Loading
 import com.example.acexproyecto.views.ActividadesListView
 import com.example.acexproyecto.views.ActivitiesView
@@ -26,12 +28,9 @@ fun NavManager(navController: NavHostController, isDarkMode: Boolean, onThemeCha
         navController = navController,
         startDestination = "principal"
     ) {
-        // Pantalla de login
         composable("principal") {
             LoginView(navController)
         }
-
-        // Pantalla principal (Home)
 
         composable("home") {
             HomeView(navController) {
@@ -39,28 +38,22 @@ fun NavManager(navController: NavHostController, isDarkMode: Boolean, onThemeCha
             }
         }
 
-        // Pantalla de localización (Mapa)
         composable("maps") {
             LocalizacionView(navController, isDarkMode)
         }
 
-        // Pantalla de ajustes y perfil
         composable("settingsandprofile") {
             SettingsView(navController, isDarkMode, onThemeChanged)
         }
 
-        // Pantalla de actividades
         composable("activities") {
             ActivitiesView(navController)
         }
 
-        // Pantalla de chat
         composable("chat") {
-            //chatView(navController)
             ActividadesListView(navController)
         }
 
-        // Pantalla de actividad detalles
         composable("detalle_actividad_screen/{activityId}") { backStackEntry ->
             val activityId = backStackEntry.arguments?.getString("activityId") ?: return@composable
             ActivityDetailView(navController = navController, activityId = activityId, isDarkMode)

@@ -1,3 +1,10 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 package com.example.acexproyecto.views
 
 import Calendario
@@ -24,28 +31,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
 import com.example.acexproyecto.R
-import com.example.acexproyecto.objetos.Loading
 import com.example.acexproyecto.objetos.Usuario
-import com.example.acexproyecto.ui.theme.*  // Importa los colores personalizados
+import com.example.acexproyecto.ui.theme.*
 import com.example.appacex.model.ActividadResponse
 import com.example.appacex.model.RetrofitClient
 import com.microsoft.identity.client.ISingleAccountPublicClientApplication
@@ -63,9 +62,9 @@ fun HomeView(navController: NavController, onLoadingComplete: () -> Unit) {
     LaunchedEffect(Unit) {
         onLoadingComplete()
     }
-    // Estructura principal con la barra inferior
+
     Scaffold(
-        topBar = { TopBar(navController) }, // Barra superior con el logo
+        topBar = { TopBar(navController) },
 
         content = { paddingValues ->
             Box(
@@ -73,10 +72,10 @@ fun HomeView(navController: NavController, onLoadingComplete: () -> Unit) {
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                ContentDetailView(navController) // Contenido principal
+                ContentDetailView(navController)
             }
         },
-        bottomBar = { BottomDetailBar(navController) }, // Barra inferior
+        bottomBar = { BottomDetailBar(navController) },
     )
 }
 
@@ -88,14 +87,14 @@ fun TopBar(navController: NavController) {
     TopAppBar(
         title = {
             Box(
-                modifier = Modifier.fillMaxWidth(), // Asegura que el Box ocupe to do el ancho disponible
-                contentAlignment = Alignment.Center // Centra el contenido dentro del Box
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.logosinnombre),
                     contentDescription = "Logo de la App",
                     modifier = Modifier
-                        .size(100.dp) // Ajustar aquí el tamaño del logo
+                        .size(100.dp)
                 )
             }
         },
@@ -110,10 +109,8 @@ fun TopBar(navController: NavController) {
         },
         actions = {
             IconButton(onClick = {
-                // Implement your logout logic here
                 MsalAppHolder.msalApp?.signOut(object : ISingleAccountPublicClientApplication.SignOutCallback {
                     override fun onSignOut() {
-                        // Navigate back to the login screen
                         navController.navigate("principal")
                     }
 
@@ -134,7 +131,6 @@ fun TopBar(navController: NavController) {
         ),
     )
 
-    // Mostrar el diálogo con las preguntas frecuentes
     if (showDialog) {
         FAQDialog(onDismiss = { showDialog = false })
     }
@@ -151,18 +147,15 @@ fun ContentDetailView(navController: NavController) {
             try {
                 val response = RetrofitClient.instance.getActividades().execute()
                 if (response.code() == 500) {
-                    Log.e("HomeView", "Internal Server Error: ${response.code()}")
                     errorMessage.value = "Internal Server Error. Please try again later."
                 } else {
-                    Log.e("HomeView", "Response: ${response.code()}")
                     if (response.isSuccessful) {
                         val allActivities = response.body() ?: emptyList()
 
-                        // Filtramos las actividades que sean a partir de la fecha actual
-                        val currentDate = System.currentTimeMillis() // Fecha actual en milisegundos
+                        val currentDate = System.currentTimeMillis()
                         val filteredActivities = allActivities.filter { actividad ->
-                            val activityDate = stringToDate(actividad.fini) // Convierte la fecha de la actividad
-                            activityDate >= currentDate // Compara la fecha de la actividad con la fecha actual
+                            val activityDate = stringToDate(actividad.fini)
+                            activityDate >= currentDate
                         }
                         activities.addAll(filteredActivities)
                     } else {
@@ -182,7 +175,7 @@ fun ContentDetailView(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(bottom = 12.dp) // Adjust padding to avoid overlap with BottomAppBar
+            .padding(bottom = 12.dp)
     ) {
         if (isLoading.value) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -195,11 +188,9 @@ fun ContentDetailView(navController: NavController) {
         } else {
             LazyColumn {
                 item {
-                    // Información del usuario
                     UserInformation()
                 }
                 item {
-                    // Espacio para el calendario
                     CalendarView()
                 }
             }
@@ -225,17 +216,15 @@ fun ContentDetailView(navController: NavController) {
     }
 }
 
-// Función para convertir la fecha de String a Long (milisegundos) pero solo con la parte de la fecha (sin hora)
 fun stringToDate(dateString: String): Long {
     val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     val date = format.parse(dateString)
-    return date?.time ?: 0L // Si no puede parsear, devuelve 0L
+    return date?.time ?: 0L
 }
 
-// Composable que muestra las preguntas frecuentes en un diálogo emergente
 @Composable
 fun FAQDialog(onDismiss: () -> Unit) {
-    val context = LocalContext.current // Aquí obtenemos el contexto
+    val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Preguntas Frecuentes y Normativa", color = TextPrimary) },
@@ -251,7 +240,6 @@ fun FAQDialog(onDismiss: () -> Unit) {
                 Text("Cerrar", color = Color.White)
             }
         },
-        // Aquí se agrega el botón para descargar el archivo
         dismissButton = {
             GenerateFileButton(context = context)
         }
@@ -287,7 +275,6 @@ fun ExpandableFAQItem(question: String, answer: String) {
     }
 }
 
-// Datos de ejemplo para la lista de preguntas frecuentes
 val faqList = listOf(
     FAQ(
         "NORMATIVA sobre actividades complementarias y extraescolares (ACEX)",
@@ -367,58 +354,44 @@ val faqList = listOf(
 
 data class FAQ(val question: String, val answer: String)
 
-
-/// Función para generar el archivo .txt y mostrar un mensaje con Toast
 fun generateTextFile(context: Context, faqList: List<FAQ>) {
-    // Crear valores de contenido para el archivo
     val contentValues = ContentValues().apply {
-        put(MediaStore.MediaColumns.DISPLAY_NAME, "preguntas_frecuentes.txt") // Nombre del archivo
-        put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")  // Tipo MIME
-        put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS) // Directorio de descargas
+        put(MediaStore.MediaColumns.DISPLAY_NAME, "preguntas_frecuentes.txt")
+        put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
+        put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
     }
 
-    // Obtener URI para insertar el archivo en MediaStore
     val uri = context.contentResolver.insert(MediaStore.Files.getContentUri("external"), contentValues)
 
     uri?.let {
         try {
-            // Obtener el OutputStream para escribir en el archivo
             val outputStream: OutputStream? = context.contentResolver.openOutputStream(it)
 
             outputStream?.let { stream ->
-                // Crear un StringBuilder para generar el contenido del archivo
                 val contentBuilder = StringBuilder()
 
-                // Agregar título al archivo
                 contentBuilder.append("Preguntas Frecuentes:\n\n")
 
-                // Escribir las preguntas y respuestas
                 faqList.forEachIndexed { index, faq ->
                     contentBuilder.append("${index + 1}. ${faq.question}\n")
                     contentBuilder.append("${faq.answer}\n\n")
                 }
 
-                // Agregar mensaje de ubicación
                 contentBuilder.append("\nEl archivo se ha descargado en la carpeta 'Descargas'.\n")
 
-                // Escribir el contenido en el archivo
                 stream.write(contentBuilder.toString().toByteArray())
                 stream.close()
             }
 
-            // Mostrar un mensaje de éxito usando un Toast
             Toast.makeText(context, "Archivo guardado en la carpeta Descargas del dispositivo.", Toast.LENGTH_LONG).show()
 
         } catch (e: IOException) {
             e.printStackTrace()
-            // En caso de error, mostrar el mensaje
             Toast.makeText(context, "Error al guardar el archivo.", Toast.LENGTH_LONG).show()
         }
     }
 }
 
-
-// Composable con un botón para generar el archivo
 @Composable
 fun GenerateFileButton(context: Context) {
     Button(onClick = { generateTextFile(context, faqList) }) {
@@ -435,13 +408,11 @@ fun UserInformation() {
         contentAlignment = Alignment.CenterStart
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Row para la foto, nombre y email
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(30.dp),
                 modifier = Modifier.padding(bottom = 16.dp)
             ) {
-                // Ícono de perfil más grande
                 if (Usuario.photoPath.isNullOrEmpty()) {
                     Box(
                         modifier = Modifier
@@ -469,8 +440,8 @@ fun UserInformation() {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(Usuario.displayName, fontSize = 20.sp, color = TextPrimary) // Color de texto
-                    Text(Usuario.account, fontSize = 16.sp, color = TextPrimary) // Color de texto
+                    Text(Usuario.displayName, fontSize = 20.sp, color = TextPrimary)
+                    Text(Usuario.account, fontSize = 16.sp, color = TextPrimary)
                 }
             }
         }
@@ -488,14 +459,14 @@ fun CalendarView() {
             .fillMaxWidth()
     ) {
         Box(
-            modifier = Modifier.fillMaxWidth(), // Hace que el Box ocupe todo el ancho
-            contentAlignment = Alignment.Center // Centra el contenido dentro del Box
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
             Text(
                 "Calendario de Actividades",
                 color = TextPrimary,
-                fontSize = 20.sp, // Tamaño más grande
-                fontWeight = FontWeight.Bold, // Hacer el texto en negrita
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
             )
         }
 
@@ -514,7 +485,6 @@ fun ActivityCardItem(
     index: Int,
     navController: NavController
 ) {
-    // Color de íconos según el estado de la actividad
     val iconColor = when (activityStatus) {
         "APROBADA" -> TextPrimary
         "REALIZADA" -> TextPrimary
@@ -522,28 +492,25 @@ fun ActivityCardItem(
         else -> TextPrimary
     }
 
-    // Card con sombra
     Card(
         modifier = Modifier
             .padding(8.dp)
             .width(150.dp)
             .height(110.dp)
             .clickable {
-                // Navegar a otra pantalla con la información de la actividad
                 navController.navigate("detalle_actividad_screen/${index}")
             }
-            .shadow(8.dp, RoundedCornerShape(8.dp)), // Sombra debajo de la tarjeta
+            .shadow(8.dp, RoundedCornerShape(8.dp)),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant // Color de fondo para las tarjetas
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
-        shape = RoundedCornerShape(8.dp) // Bordes redondeados para la card
+        shape = RoundedCornerShape(8.dp)
     ) {
         Column(
             modifier = Modifier
                 .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Título de la actividad
             Text(
                 activityName,
                 color = TextPrimary,
@@ -552,10 +519,10 @@ fun ActivityCardItem(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            // Fecha y hora
+
             Text(activityDate, color = TextPrimary, fontSize = 14.sp)
 
-            // Íconos o imágenes para representar el estado de la actividad
+
             when (activityStatus) {
                 "APROBADA" -> {
                     Icon(
@@ -567,7 +534,7 @@ fun ActivityCardItem(
                 }
                 "REALIZADA" -> {
                     Icon(
-                        imageVector = Icons.Filled.CheckCircle, // Check (tick) para aprobada
+                        imageVector = Icons.Filled.CheckCircle,
                         contentDescription = "Aprobada",
                         tint = iconColor,
                         modifier = Modifier.size(30.dp)
@@ -582,7 +549,6 @@ fun ActivityCardItem(
                     )
                 }
                 else -> {
-                    // Si el estado no es ninguno de los anteriores, mostrar un reloj por defecto, seria estado realizada
                     Icon(
                         painter = painterResource(id = R.drawable.reloj),
                         contentDescription = "Pendiente",
@@ -608,7 +574,6 @@ fun BottomDetailBar(navController: NavController) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            // Íconos de la barra inferior
             IconButton(
                 onClick = { if (currentRoute != "maps") navController.navigate("maps") },
                 modifier = Modifier.size(65.dp)
@@ -665,12 +630,4 @@ fun BottomDetailBar(navController: NavController) {
             }
         }
     }
-}
-
-@Preview
-@Composable
-fun PreviewHomeView() {
-    // Crear un NavController simulado para el preview
-    val navController = rememberNavController()
-    HomeView(navController = navController, { Loading.isLoading = false})
 }

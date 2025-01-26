@@ -1,3 +1,10 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 package com.example.acexproyecto.views
 
 import androidx.compose.foundation.Image
@@ -13,20 +20,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.acexproyecto.R
 import com.example.acexproyecto.ui.theme.Background
 import com.example.acexproyecto.ui.theme.TextPrimary
 import com.example.acexproyecto.ui.theme.Accent
 import com.microsoft.identity.client.ISingleAccountPublicClientApplication
 import android.app.Application
+import android.os.Build
 import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.annotation.RequiresExtension
 import androidx.compose.ui.platform.LocalContext
 import com.example.acexproyecto.objetos.Loading
 import com.microsoft.identity.client.AcquireTokenParameters
@@ -72,11 +78,9 @@ object MsalAppHolder {
 
 @Composable
 fun LoginView(navController: NavController) {
-    // Variables de estado para el nombre de usuario y la contraseña
     val context = LocalContext.current as ComponentActivity
     var isLoading by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
 
     fun showLoginDialog() {
         val graphScopes = listOf(
@@ -95,8 +99,8 @@ fun LoginView(navController: NavController) {
                 .withScopes(graphScopes)
                 .withPrompt(Prompt.SELECT_ACCOUNT)
                 .withCallback(object : AuthenticationCallback {
+                    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
                     override fun onSuccess(authenticationResult: IAuthenticationResult) {
-                        // Manejar el éxito de la autenticación
                         Usuario.msalToken = authenticationResult.accessToken
                         CoroutineScope(Dispatchers.Main).launch {
                             val calendarId = fetchCalendarId(authenticationResult.accessToken, "ACEX")
@@ -107,10 +111,6 @@ fun LoginView(navController: NavController) {
                                 authenticationResult.account?.username ?: ""
                             ) { isProfessor ->
                                 if (!isProfessor) {
-                                    //Log.d("LoginView", "Usuario no es profesor")
-                                    //navController.navigate("principal") {
-                                    //    popUpTo("home") { inclusive = true }
-                                    //}
                                     showDialog = true
                                 } else {
                                     fetchUserProfile(context, authenticationResult) {
@@ -150,12 +150,10 @@ fun LoginView(navController: NavController) {
                     }
 
                     override fun onError(exception: MsalException) {
-                        // Handle authentication error
                         Log.e("Authentication", "Custom API Error: ${exception.message}")
                     }
 
                     override fun onCancel() {
-                        // Handle user canceling the authentication
                         Log.d("Authentication", "Custom API Authentication canceled")
                     }
                 })
@@ -176,11 +174,9 @@ fun LoginView(navController: NavController) {
                 TextButton(onClick = { showDialog = false
                     MsalAppHolder.msalApp?.signOut(object : ISingleAccountPublicClientApplication.SignOutCallback {
                         override fun onSignOut() {
-                            // Navigate back to the login screen
                             navController.navigate("principal")
                             Loading.isLoading = false
                         }
-
                         override fun onError(exception: MsalException) {
                             Log.e("TopBar", "Error during sign out", exception)
                         }
@@ -195,7 +191,7 @@ fun LoginView(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Background) // Fondo general
+            .background(Background)
     ) {
         if (isLoading) {
             CircularProgressIndicator(
@@ -210,26 +206,23 @@ fun LoginView(navController: NavController) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Logo
                 Image(
-                    painter = painterResource(id = R.drawable.logorecortado), // Asegúrate de tener el logo en la carpeta drawable
+                    painter = painterResource(id = R.drawable.logorecortado),
                     contentDescription = "Logo",
                     modifier = Modifier
                         .size(300.dp)
-                        .padding(bottom = 0.dp) // Espaciado debajo del logo
+                        .padding(bottom = 0.dp)
                 )
 
-                // Título de Login
                 Text(
                     text = "Login",
                     fontSize = 30.sp,
-                    color = TextPrimary, // Color del texto principal
+                    color = TextPrimary,
                     modifier = Modifier.padding(bottom = 32.dp)
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Botón de Microsoft con su logo
                 Button(
                     onClick = { showLoginDialog() },
                     modifier = Modifier
@@ -238,11 +231,11 @@ fun LoginView(navController: NavController) {
                         .align(Alignment.CenterHorizontally)
                         .padding(top = 16.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Accent // Color para Microsoft
+                        containerColor = Accent
                     )
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.microsoft), // Logo de Microsoft
+                        painter = painterResource(id = R.drawable.microsoft),
                         contentDescription = "Microsoft Logo",
                         modifier = Modifier.size(24.dp)
                     )
@@ -286,11 +279,4 @@ suspend fun fetchCalendarId(accessToken: String, calendarName: String): String? 
         Log.e("fetchCalendarId", "Unexpected error", e)
         null
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    val navController = rememberNavController()
-    LoginView(navController = navController)
 }

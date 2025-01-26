@@ -1,3 +1,10 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 package com.example.acexproyecto.views
 
 import android.content.Context
@@ -21,11 +28,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.acexproyecto.R
 import com.example.acexproyecto.objetos.Usuario
 import com.example.acexproyecto.ui.theme.TextPrimary
@@ -79,7 +84,7 @@ fun ChatView(
     }
 
     Scaffold(
-        topBar = { TopBar(navController) }, // Barra superior con el logo
+        topBar = { TopBar(navController) },
 
         content = { paddingValues ->
             Column(
@@ -121,7 +126,7 @@ fun ChatView(
                 ChatScreen(activityId, Usuario.displayName, userColors, colors)
             }
         },
-        bottomBar = { BottomDetailBar(navController) }, // Barra inferior
+        bottomBar = { BottomDetailBar(navController) },
     )
 
     if (showProfessorDialog) {
@@ -378,7 +383,6 @@ fun saveLastReadMessageIndex(context: Context, activityId: String, index: Int) {
             putInt("lastReadMessageIndex_$activityId", index)
             apply()
         }
-        Log.d("ChatView", "Saved lastReadMessageIndex: $index for activityId: $activityId")
     } else {
         Log.e("ChatView", "Attempted to save invalid lastReadMessageIndex: $index for activityId: $activityId")
     }
@@ -387,7 +391,6 @@ fun saveLastReadMessageIndex(context: Context, activityId: String, index: Int) {
 fun getLastReadMessageIndex(context: Context, activityId: String): Int {
     val sharedPreferences: SharedPreferences = context.getSharedPreferences("ChatPrefs", Context.MODE_PRIVATE)
     val index = sharedPreferences.getInt("lastReadMessageIndex_$activityId", 0)
-    Log.d("ChatView", "Retrieved lastReadMessageIndex: $index for activityId: $activityId")
     return if (index >= 0) index else 0
 }
 
@@ -396,10 +399,3 @@ data class Message(
     val content: String = "",
     val timestamp: Long = 0L
 )
-
-@Preview(showBackground = true)
-@Composable
-fun ProfileViewPreview() {
-    val navController = rememberNavController()
-    ChatView(navController, "11")
-}

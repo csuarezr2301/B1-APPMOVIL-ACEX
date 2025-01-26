@@ -1,15 +1,19 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 package com.example.acexproyecto.views
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-
 import androidx.compose.foundation.lazy.items
-
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -26,10 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.example.acexproyecto.ui.theme.TextPrimary
 import com.example.appacex.model.ActividadResponse
@@ -46,21 +48,17 @@ import java.util.Calendar
 import java.util.Locale
 
 
-// Define color palette for the app
-val PrimaryColor = Color(0xFF79B3BB)   // Primary color (light blue)
-val SecondaryColor = Color(0xFF9AE7DF) // Secondary color (lighter blue)
-val TertiaryColor = Color(0xFFD0E8F2)  // Tertiary color (light cyan)
-val BackgroundColor = Color(0xFFF1F1F1) // Background color (off white)
-val TextColor = Color(0xFF000000) // Text color (black)
+val TertiaryColor = Color(0xFFD0E8F2)
+val TextColor = Color(0xFF000000)
 
 
 @Composable
 fun ActivitiesView(navController: NavController) {
     var selectedFilter by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
-    var selectedDate by remember { mutableStateOf<Long?>(null) }  // Para el filtro de fecha (un solo día)
-    var selectedCourse by remember { mutableStateOf<String?>(null) } // Ahora es String, ya que el curso es un nombre (no Long)
-    var selectedState by remember { mutableStateOf<String?>(null) }  // Estado seleccionado
+    var selectedDate by remember { mutableStateOf<Long?>(null) }
+    var selectedCourse by remember { mutableStateOf<String?>(null) }
+    var selectedState by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -73,39 +71,31 @@ fun ActivitiesView(navController: NavController) {
             ) {
                 Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
-                    // Barra de búsqueda con filtro
                     SearchBar(
                         onSearchQueryChanged = { query ->
-                            searchQuery = query  // Actualiza el texto de búsqueda
+                            searchQuery = query
                         },
                         onFilterSelected = { filter, date, course, state ->
                             selectedFilter = filter
                             selectedDate = date
                             selectedCourse = course
-                            selectedState = state // Aseguramos que el estado seleccionado se actualice
+                            selectedState = state
                         }
                     )
-
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    // Box para Mis Actividades (arriba)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1.5f) // Esto asegura que ocupe la mitad superior de la pantalla
+                            .weight(1.5f)
                     ) {
                         AllActividades(navController, selectedFilter, searchQuery, selectedDate,
-                            selectedCourse, selectedState) // Pasamos el estado al filtrar
+                            selectedCourse, selectedState)
                     }
-
-                    // Espacio entre las secciones
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    // Box para Otras Actividades (abajo)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f) // Esto asegura que ocupe la mitad inferior de la pantalla
+                            .weight(1f)
                     ) {
                         OtrasActividades(navController)
                     }
@@ -145,7 +135,7 @@ fun SearchBar(
             value = searchText,
             onValueChange = {
                 searchText = it
-                onSearchQueryChanged(it) // Cada vez que cambia el texto de búsqueda
+                onSearchQueryChanged(it)
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -163,7 +153,6 @@ fun SearchBar(
             }
         )
 
-        // Popup con opciones de filtro
         if (showPopup) {
             Popup(
                 alignment = Alignment.TopStart,
@@ -192,13 +181,12 @@ fun SearchBar(
                                                 showStatePicker = true
                                             }
                                             "Todas" -> {
-                                                // Cuando se selecciona "Todas", restablecer todo a null
                                                 selectedFilter = null
                                                 selectedDate = null
                                                 selectedCourse = null
                                                 selectedState = null
                                                 onFilterSelected(selectedFilter, selectedDate, selectedCourse, selectedState)
-                                                showPopup = false // Cerramos el popup
+                                                showPopup = false
                                             }
                                         }
                                     }
@@ -215,14 +203,12 @@ fun SearchBar(
             }
         }
 
-        // Selector de estado
         if (showStatePicker) {
             StatePickerDialog(
                 estadoOptions = estadoOptions,
                 onDismissRequest = { showStatePicker = false },
                 onStateSelected = { state ->
                     selectedState = state
-                    // Al seleccionar un estado, reiniciamos la búsqueda
                     onFilterSelected(null, null, null, selectedState)
                     showStatePicker = false
                     showPopup = false
@@ -230,14 +216,12 @@ fun SearchBar(
             )
         }
 
-        // Selector de cursos
         if (showCoursePicker) {
             CoursePickerDialog(
                 cursos = cursos,
                 onDismissRequest = { showCoursePicker = false },
                 onCourseSelected = { course ->
                     selectedCourse = course
-                    // Al seleccionar un curso, reiniciamos la búsqueda
                     onFilterSelected(null, null, selectedCourse, null)
                     showCoursePicker = false
                     showPopup = false
@@ -245,13 +229,11 @@ fun SearchBar(
             )
         }
 
-        // Selector de fecha
         if (showDatePicker) {
             DatePickerDialog(
                 onDismissRequest = { showDatePicker = false },
                 onDateSelected = { date ->
                     selectedDate = date
-                    // Al seleccionar una fecha, reiniciamos la búsqueda
                     onFilterSelected(null, selectedDate, null, null)
                     showDatePicker = false
                     showPopup = false
@@ -273,7 +255,7 @@ fun StatePickerDialog(
         title = { Text("Selecciona un estado") },
         text = {
             LazyColumn(
-                modifier = Modifier.heightIn(max = 300.dp), // Limitar el tamaño máximo
+                modifier = Modifier.heightIn(max = 300.dp),
                 contentPadding = PaddingValues(8.dp)
             ) {
                 items(estadoOptions) { state ->
@@ -304,9 +286,8 @@ fun CoursePickerDialog(
         onDismissRequest = onDismissRequest,
         title = { Text("Selecciona un curso") },
         text = {
-            // Aquí usamos LazyColumn para hacer la lista de cursos scrollable
             LazyColumn(
-                modifier = Modifier.heightIn(max = 300.dp), // Limitar el tamaño máximo
+                modifier = Modifier.heightIn(max = 300.dp),
                 contentPadding = PaddingValues(8.dp)
             ) {
                 items(cursos) { course ->
@@ -330,37 +311,31 @@ fun CoursePickerDialog(
 @Composable
 fun DatePickerDialog(
     onDismissRequest: () -> Unit,
-    onDateSelected: (Long) -> Unit  // Callback con la fecha seleccionada
+    onDateSelected: (Long) -> Unit
 ) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
 
-    // Usamos un DatePicker para seleccionar fechas
     val datePickerDialog = remember {
         android.app.DatePickerDialog(context).apply {
             setOnDateSetListener { _, year, month, dayOfMonth ->
-                // Cuando se selecciona una fecha, podemos manejar el valor.
                 calendar.set(year, month, dayOfMonth)
                 val selectedDate = calendar.timeInMillis
 
-                // Llamamos al callback con las fechas seleccionadas
                 onDateSelected(selectedDate)
             }
         }
     }
 
-    // Mostrar el DatePicker si es necesario
     LaunchedEffect(Unit) {
         datePickerDialog.show()
     }
 
-    // Botón para cerrar el dialogo si es necesario
     Button(onClick = onDismissRequest) {
         Text("Cerrar")
     }
 }
 
-@OptIn(ExperimentalGlideComposeApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun AllActividades(
     navController: NavController,
@@ -371,18 +346,15 @@ fun AllActividades(
     selectedState: String?
 ) {
     val actividades = remember { mutableStateListOf<ActividadResponse>() }
-    val gruposParticipantes = remember { mutableStateListOf<GrupoParticipanteResponse>() }
     val isLoading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
 
-    // Función para convertir la fecha de String a Long (milisegundos) pero solo con la parte de la fecha (sin hora)
     fun stringToDate(dateString: String): Long {
         val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val date = format.parse(dateString)
         return date?.time ?: 0L
     }
 
-    // Función de filtrado
     fun filterActividades(
         actividadesList: List<ActividadResponse>,
         gruposParticipantesList: List<GrupoParticipanteResponse>,
@@ -391,18 +363,14 @@ fun AllActividades(
     ): List<ActividadResponse> {
         return actividadesList.filter { actividad ->
 
-            // Filtro por estado (si se ha seleccionado uno)
             val matchesState = selectedState?.let {
                 actividad.estado?.equals(it, ignoreCase = true) == true
-            } ?: true // Si no se selecciona un estado, no se filtra
+            } ?: true
 
-            // Filtro por título de búsqueda
             val matchesSearchQuery = actividad.titulo.contains(searchQuery, ignoreCase = true)
 
-            // Filtro por fecha
             val matchesDate = selectedDate?.let {
                 val activityStartDate = stringToDate(actividad.fini)
-                val activityEndDate = stringToDate(actividad.ffin)
                 val calendar = Calendar.getInstance()
                 calendar.timeInMillis = selectedDate
                 calendar.set(Calendar.HOUR_OF_DAY, 0)
@@ -419,9 +387,8 @@ fun AllActividades(
                 val activityStartDateNoTime = calendar.timeInMillis
 
                 selectedDateNoTime == activityStartDateNoTime
-            } ?: true // Si no se selecciona una fecha, no se filtra
+            } ?: true
 
-            // Filtro por curso
             val matchesCourse = selectedCourse?.let {
                 val gruposDelCurso = gruposParticipantesList.filter { grupoParticipante ->
                     grupoParticipante.grupo.curso.codCurso == it
@@ -429,18 +396,15 @@ fun AllActividades(
                 gruposDelCurso.any { grupoParticipante ->
                     grupoParticipante.actividades.id == actividad.id
                 }
-            } ?: true // Si no se selecciona un curso, no se filtra
+            } ?: true
 
-            // Todos los filtros
             matchesState && matchesSearchQuery && matchesCourse && matchesDate
         }
     }
 
-    // Cargar las actividades y grupos participantes
     LaunchedEffect(selectedFilter, searchQuery, selectedDate, selectedCourse, selectedState) {
         withContext(Dispatchers.IO) {
             try {
-                // Realizamos las peticiones a la API
                 val response = RetrofitClient.instance.getActividades().execute()
                 val groupsResponse = RetrofitClient.instance.getGrupoParticipantes().execute()
                 if (response.isSuccessful && groupsResponse.isSuccessful) {
@@ -465,13 +429,9 @@ fun AllActividades(
         }
     }
 
-
-
-    // Comprobamos si no hay actividades y mostramos el mensaje
     if (isLoading.value) {
-        //CircularProgressIndicator(modifier = Modifier.fillMaxSize())
+        CircularProgressIndicator(modifier = Modifier.fillMaxSize())
     } else if (actividades.isEmpty() && errorMessage.value == null) {
-        // Mostramos el mensaje si no hay actividades
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -499,7 +459,6 @@ fun AllActividades(
         LazyColumn {
             items(actividades) { actividad ->
                 // Mostrar cada actividad
-
             }
         }
     }
@@ -554,14 +513,11 @@ fun OtrasActividades(navController: NavController) {
     val isLoading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
 
-    // Obtener el ID del profesor actual (esto debe estar disponible desde tu sistema de autenticación)
-    val profesorId =
-        Usuario.profesor?.uuid  // Asegúrate de que este sea el ID correcto del profesor
+    val profesorId = Usuario.profesor?.uuid
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             try {
-                // Obtener todas las actividades
                 val actividadesResponse = RetrofitClient.instance.getActividades().execute()
                 val profesorParticipantesResponse = RetrofitClient.instance.getProfesoresparticipantes().execute() // Asegúrate de tener un endpoint para obtener esto
 
@@ -569,7 +525,6 @@ fun OtrasActividades(navController: NavController) {
                     val allActividades = actividadesResponse.body() ?: emptyList()
                     val profesorParticipantes = profesorParticipantesResponse.body() ?: emptyList()
 
-                    // Filtrar las actividades asociadas al profesor actual
                     val profesorActividades = allActividades.filter { actividad ->
                         profesorParticipantes.any { profesorParticipante ->
                             profesorParticipante.profesor.uuid == profesorId && profesorParticipante.actividad.id == actividad.id
@@ -596,7 +551,7 @@ fun OtrasActividades(navController: NavController) {
             modifier = Modifier
                 .padding(bottom = 16.dp)
                 .align(Alignment.CenterHorizontally),
-            color = TextPrimary // Color del texto para el título de la sección
+            color = TextPrimary
         )
 
         if (isLoading.value) {
@@ -611,23 +566,15 @@ fun OtrasActividades(navController: NavController) {
             LazyRow(modifier = Modifier.fillMaxWidth()) {
                 items(actividades.size) { index ->
                     val actividad = actividades[index]
-                    // Usamos el componente ActivityCardItem
                     ActivityCardItem(
                         activityName = actividad.titulo,
-                        activityDate = actividad.fini , // Asegúrate de que 'fecha' sea un campo válido
+                        activityDate = actividad.fini ,
                         activityStatus = actividad.estado,
-                        index = actividad.id, // Usamos el ID para navegar a la pantalla de detalles
+                        index = actividad.id,
                         navController = navController
                     )
                 }
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    val navController = rememberNavController()
-    ActivitiesView(navController)
 }

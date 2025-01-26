@@ -1,3 +1,10 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 package com.example.acexproyecto.views
 
 import androidx.compose.foundation.clickable
@@ -63,7 +70,7 @@ fun ActividadesListView( navController: NavHostController ) {
                     }
                 }
 
-                val responseProfesResponsables = RetrofitClient.instance.getProfesoresparticipantes().execute()
+                val responseProfesResponsables = RetrofitClient.instance.getProfesoresResponsables().execute()
                 if (responseProfesResponsables.isSuccessful) {
                     val profesorParticipantes = responseProfesResponsables.body() ?: emptyList()
                     filteredActividades += actividades.filter { actividad ->
@@ -84,7 +91,7 @@ fun ActividadesListView( navController: NavHostController ) {
         }
     }
     Scaffold(
-        topBar = { TopBar(navController) }, // Barra superior con el logo
+        topBar = { TopBar(navController) },
 
         content = { paddingValues ->
             Column(
@@ -113,7 +120,7 @@ fun ActividadesListView( navController: NavHostController ) {
                 }
             }
         },
-        bottomBar = { BottomDetailBar(navController) }, // Barra inferior
+        bottomBar = { BottomDetailBar(navController) },
     )
 
 

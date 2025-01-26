@@ -1,8 +1,17 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 package com.example.appacex.model
 
 import com.example.acexproyecto.model.GrupoParticipanteResponse
 import com.example.acexproyecto.model.GrupoResponse
 import com.example.acexproyecto.model.PhotoResponse
+import com.example.acexproyecto.model.ProfesorParticipanteResponse
+import com.example.acexproyecto.model.ProfesorResponsableResponse
 import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.Response

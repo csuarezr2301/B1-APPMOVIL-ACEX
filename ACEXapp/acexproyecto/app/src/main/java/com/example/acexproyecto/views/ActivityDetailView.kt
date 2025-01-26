@@ -1,3 +1,10 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 package com.example.acexproyecto.views
 
 import android.Manifest
@@ -18,7 +25,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -36,18 +42,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
 import com.example.acexproyecto.R
 import com.example.acexproyecto.camara.CamaraView
 import com.example.acexproyecto.ui.theme.ButtonPrimary
 import com.example.acexproyecto.ui.theme.TextPrimary
 import com.example.appacex.model.ActividadResponse
-import com.example.appacex.model.ProfesorParticipanteResponse
 import com.example.appacex.model.ProfesorResponse
 import com.example.appacex.model.RetrofitClient
 import com.google.android.gms.maps.model.CameraPosition
@@ -86,11 +89,11 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.pm.PackageManager
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
+import com.example.acexproyecto.model.ProfesorParticipanteResponse
 import com.example.acexproyecto.objetos.Usuario
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.MapProperties
@@ -121,7 +124,6 @@ fun ActivityDetailView(navController: NavController, activityId: String, isDarkT
                 if (response.isSuccessful) {
                     activity = response.body()?.find { it.id == activityId.toInt() }
                     isAdminOrSolicitante = Usuario.profesor?.rol in listOf("ADM", "ED") || Usuario.profesor?.uuid == activity?.solicitante?.uuid
-                    Log.d("ActivityDetailView", "Activity: $isAdminOrSolicitante")
                 }
                 val grupoResponse = RetrofitClient.instance.getGrupoParticipantes().execute()
                 if (grupoResponse.isSuccessful) {
@@ -142,9 +144,6 @@ fun ActivityDetailView(navController: NavController, activityId: String, isDarkT
                 val responseFotos = RetrofitClient.instance.getFotos().execute()
                 if (responseFotos.isSuccessful) {
                     imagesActividad = responseFotos.body()?.filter { it.actividad.id == activityId.toInt() } ?: emptyList()
-                    for (photo in imagesActividad) {
-                        Log.d("ActivityDetailView", "Photo: ${photo.urlFoto}")
-                    }
                 }
             } catch (e: Exception) {
                 Log.e("ActivityDetailView", "Error fetching activity details", e)
@@ -186,7 +185,6 @@ fun ActivityDetailContent(
     isDarkTheme: Boolean,
     canEdit: Boolean
 ) {
-    // Variables de estado y configuración
     var isDialogVisible by remember { mutableStateOf(false) }
     var isPopupVisible by remember { mutableStateOf(false) }
     var isCameraVisible by remember { mutableStateOf(false) }
@@ -222,7 +220,7 @@ fun ActivityDetailContent(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = titulo ?: "Nombre de la actividad",
+                    text = titulo,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary,
@@ -368,7 +366,6 @@ fun ActivityDetailContent(
         }
 
         item {
-            // Descripción de la actividad
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -386,7 +383,7 @@ fun ActivityDetailContent(
                 }
                 item {
                     Text(
-                        text = descripcion ?: "Descricion no encontrada",
+                        text = descripcion,
                         fontSize = 16.sp,
                         modifier = Modifier.padding(16.dp),
                         color = TextPrimary
@@ -405,7 +402,6 @@ fun ActivityDetailContent(
                 ProfesoresAsistentes(profAsistentes, onDataChanged, canEdit)
                 Spacer(modifier = Modifier.height(15.dp))
                 Observaciones(actividad = activity, onUpdateActividad = { updatedActividad ->
-                    // Update the actividad state with the new values
                     activity = updatedActividad
                     onDataChanged(true)
                 },
@@ -447,8 +443,8 @@ fun ActivityDetailContent(
     if (isDialogVisible) {
         EditActivityDialog(
             actividad = activity,
-            onNameChange = { newName -> /* Handle Name Change */ },
-            onDescriptionChange = { newDescription -> /* Handle Description Change */ },
+            onNameChange = { newName ->  },
+            onDescriptionChange = { newDescription ->  },
             onDismiss = { isDialogVisible = false },
             onUpdateActividad = { updatedActividad ->
                 activity = updatedActividad
@@ -485,17 +481,12 @@ fun ActivityDetailContent(
         )
     }
 
-
-    // Popup para fotos
-    // Verifica si el primer valor de 'showImagePopup' es true, indicando que el popup de la imagen debe mostrarse.
     if (showImagePopup.first) {
         val photo = showImagePopup.second
         val imageUrl = photo?.urlFoto?.let {
             baseUrl + photo.actividad.titulo.replace(" ", "_") + "/" + it.substringAfterLast("\\")
                 .replace(" ", "_")
         } ?: ""
-
-        Log.d("PopupImage", "URL de imagen: $imageUrl")
 
         AlertDialog(
             onDismissRequest = { showImagePopup = false to null },
@@ -528,26 +519,18 @@ fun ActivityDetailContent(
                 Column {
                     TextButton(
                         onClick = {
-                            // Verificamos que la foto no sea nula
                             photo?.let {
-                                // Actualizamos la descripción de la foto
                                 it.descripcion = updatedDescription
-
-                                // Actualizamos la lista de imágenes en el estado
                                 imagesActividad = imagesActividad.map { photoItem ->
                                     if (photoItem.id == it.id) {
-                                        // Si el ID coincide, actualizamos la descripción
                                         photoItem.copy(descripcion = updatedDescription)
                                     } else {
-                                        // Si no coincide, dejamos la foto sin cambios
                                         photoItem
                                     }
-                                }.toMutableList() // Convertimos a MutableList para asegurarnos de que sea mutable
+                                }.toMutableList()
 
-                                // Llamamos a onDataChanged para notificar que los datos han cambiado
                                 onDataChanged(true)
 
-                                // Cerramos el popup de la imagen
                                 showImagePopup = false to null
                             }
                         }
@@ -557,11 +540,10 @@ fun ActivityDetailContent(
 
                     Button(
                         onClick = {
-                            // Elimina la foto de imagesActividad y la agrega a deletedFotos
                             photo?.let {
                                 imagesActividad = imagesActividad.filter { it.id != photo.id }
                                 deletedFotos =
-                                    deletedFotos + it // Se agrega a deletedFotos para ser eliminada de la base de datos
+                                    deletedFotos + it
                                 onDataChanged(true)
                                 showImagePopup = false to null
                             }
@@ -827,7 +809,6 @@ fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataC
                             }
                         }.filterNotNull()
 
-                        // Merge the new groups with the existing ones
                         val mergedAsistentes = grupoParticipantes.toMutableList().apply {
                             addAll(updatedGruposAsistentes.filter { newGroup ->
                                 none { it.grupo.id == newGroup.grupo.id }
@@ -857,12 +838,11 @@ fun AlumnosAsistentes(gruposAsistentes:  List<GrupoParticipanteResponse>,onDataC
 
 @Composable
 fun ProfesoresAsistentes(profesAsistentes: List<ProfesorParticipanteResponse>, onDataChanged: (Boolean) -> Unit, canEdit: Boolean) {
-    var profesoresLista by remember { mutableStateOf<List<ProfesorResponse>>(emptyList()) } // todos los profesores
-    //var profesoresAsistentes by remember {mutableStateOf(profAsistentes)}
+    var profesoresLista by remember { mutableStateOf<List<ProfesorResponse>>(emptyList()) }
     var isLoadingProfesores by remember { mutableStateOf(true) }
     var isLoadingAsistentes by remember { mutableStateOf(true) }
     var searchQuery by remember { mutableStateOf("") }
-    var selectedProfesores by remember { mutableStateOf<List<ProfesorParticipanteResponse>>(emptyList()) } // lista de profesores seleccionados
+    var selectedProfesores by remember { mutableStateOf<List<ProfesorParticipanteResponse>>(emptyList()) }
     var isDialogVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -971,7 +951,6 @@ fun ProfesoresAsistentes(profesAsistentes: List<ProfesorParticipanteResponse>, o
                                     Checkbox(
                                         checked = isSelected,
                                         onCheckedChange = { checked ->
-                                            Log.d("ActivityDetailView", "Profesores Asistentes 1: ${selectedProfesores.size}")
                                             val existingProfesor = selectedProfesores.find { it.profesor.uuid == profesor.uuid }
                                             selectedProfesores = if (checked) {
                                                 if (existingProfesor == null) {
@@ -986,8 +965,6 @@ fun ProfesoresAsistentes(profesAsistentes: List<ProfesorParticipanteResponse>, o
                                             } else {
                                                 selectedProfesores.filter { it.profesor.uuid != profesor.uuid }
                                             }
-                                            Log.d("ActivityDetailView", "Profesores Asistentes 2: ${selectedProfesores.size}")
-                                            //profAsistentes = selectedProfesores
                                             onDataChanged(true)
                                         }
                                     )
@@ -1012,8 +989,6 @@ fun ProfesoresAsistentes(profesAsistentes: List<ProfesorParticipanteResponse>, o
             confirmButton = {
                 Button(
                     onClick = {
-                        Log.d("ActivityDetailView", "Profesores Asistentes Guardar: ${profAsistentes.size}")
-
                         val updatedProfAsistentes = profesoresLista.filter { profesor ->
                             selectedProfesores.any { it.profesor.uuid == profesor.uuid }
                         }.map { profesor ->
@@ -1023,7 +998,7 @@ fun ProfesoresAsistentes(profesAsistentes: List<ProfesorParticipanteResponse>, o
                                 profesor = profesor,
                                 actividad = activity!!
                             )
-                        }.filterNotNull()
+                        }
 
                         val removedProfAsistentes = profAsistentes.filter { oldProf ->
                             updatedProfAsistentes.none { it.profesor.uuid == oldProf.profesor.uuid }
@@ -1053,15 +1028,6 @@ fun ProfesoresAsistentes(profesAsistentes: List<ProfesorParticipanteResponse>, o
             }
         )
     }
-}
-
-fun areProfessorsEqual(
-    list1: List<ProfesorParticipanteResponse>,
-    list2: List<ProfesorParticipanteResponse>
-): Boolean {
-    val professors1 = list1.map { it.profesor }
-    val professors2 = list2.map { it.profesor }
-    return professors1.containsAll(professors2) && professors2.containsAll(professors1)
 }
 
 fun areGruposEqual(
@@ -1214,8 +1180,6 @@ fun Observaciones(actividad: ActividadResponse?, onUpdateActividad: (ActividadRe
     }
 }
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditActivityDialog(
     actividad: ActividadResponse?,
@@ -1412,7 +1376,6 @@ fun MapaActividad(
     }
 
     var markerPosition by remember { mutableStateOf(activityLocation) }
-    Log.d("MapaActividad", "Marker position: $activityLocation")
     var isMarkerDraggable by remember { mutableStateOf(false) }
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(markerPosition, 10f)
@@ -1531,7 +1494,6 @@ fun MapaActividad(
     }
 }
 
-// Popup con opciones para seleccionar la foto
 @Composable
 fun PopupMenu(
     onDismissRequest: () -> Unit,
@@ -1629,7 +1591,6 @@ fun BotonGuardar(isEnabled: Boolean, onSaveComplete: () -> Unit) {
 
                         uploadPhotoResponses(context, photoResponses, activity!!.id, activity!!.titulo)
 
-                        // Delete photos in deletedFotos
                         deletedFotos.forEach { photo ->
                             val response = RetrofitClient.instance.deleteFoto(photo.id)
                             if (!response.isSuccessful) {
@@ -1638,9 +1599,7 @@ fun BotonGuardar(isEnabled: Boolean, onSaveComplete: () -> Unit) {
                         }
                         deletedFotos = emptyList()
 
-                        // Subir la foto actualizadas
                         imagesActividad.forEach { photo ->
-                            // Aquí guardamos las fotos con las descripciones actualizadas
                             val response = RetrofitClient.instance.updateFoto(photo.id, photo)
                             if (!response.isSuccessful) {
                                 Log.e("ActivityDetailView", "Error updating photo: ${response.code()}")
@@ -1674,7 +1633,6 @@ fun BotonGuardar(isEnabled: Boolean, onSaveComplete: () -> Unit) {
 
 fun photoResponseToMultipart(context: Context, photo: PhotoResponse): MultipartBody.Part {
     val file = compressImage(context, Uri.parse(photo.urlFoto))
-    Log.d("Upload", "Compressed file: ${file.absolutePath}, size: ${file.length()} bytes")
     val requestFile = RequestBody.create("image/jpeg".toMediaTypeOrNull(), file)
     return MultipartBody.Part.createFormData("fotos", file.name, requestFile)
 }
@@ -1683,8 +1641,6 @@ fun uploadPhotoResponses(context: Context, photoResponses: List<PhotoResponse>, 
     val multipartPhotos = photoResponses.map { photoResponseToMultipart(context, it) }
 
     if (multipartPhotos.isNotEmpty()) {
-        Log.d("Upload", "Uploading ${multipartPhotos.size} photos")
-
         val response = RetrofitClient.instance.uploadPhotos(multipartPhotos, idActividad, descripcion)
         response.enqueue(object : Callback<Void> {
             override fun onResponse(call: Call<Void>, response: Response<Void>) {
@@ -1708,16 +1664,9 @@ fun compressImage(context: Context, uri: Uri): File {
     val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
     val bitmap = BitmapFactory.decodeStream(inputStream)
     val outputStream = ByteArrayOutputStream()
-    bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream) // Compress to 50% quality
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
     val byteArray = outputStream.toByteArray()
     val tempFile = File.createTempFile("compressed", ".jpg", context.cacheDir)
     tempFile.writeBytes(byteArray)
     return tempFile
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ActivityScreenPreview() {
-    val navController = rememberNavController()
-    ActivityDetailView(navController, "11", false)
 }

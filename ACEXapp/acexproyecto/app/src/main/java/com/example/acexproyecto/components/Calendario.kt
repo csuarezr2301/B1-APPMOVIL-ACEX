@@ -1,3 +1,10 @@
+/**
+ * Aplicación de gestión de actividades extraescolares
+ * Realizada por el grupo 1 de DAM2
+ * Santiago Tamayo
+ * Carmen Suarez
+ */
+
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -19,7 +26,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
@@ -73,9 +79,9 @@ fun Calendario(accessToken: String, calendarId: String) {
 @Composable
 fun CalendarView(currentMonth: YearMonth, events: List<Event>, onMonthChange: (YearMonth) -> Unit) {
     val daysInMonth = currentMonth.lengthOfMonth()
-    val firstDayOfMonth = (currentMonth.atDay(1).dayOfWeek.value + 6) % 7 // Adjust to start on Monday
+    val firstDayOfMonth = (currentMonth.atDay(1).dayOfWeek.value + 6) % 7
     val totalDays = firstDayOfMonth + daysInMonth
-    val numberOfRows = if (totalDays > 35) 6 else 5 // Determine if 6 rows are needed
+    val numberOfRows = if (totalDays > 35) 6 else 5
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS")
     val today = LocalDate.now()
 
@@ -178,7 +184,7 @@ fun CalendarView(currentMonth: YearMonth, events: List<Event>, onMonthChange: (Y
             text = { Text(text = selectedEvent?.subject ?: "No Title") },
             confirmButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text(text = "Aceptar", color = Color(0xFF007AFF)) // iOS style color
+                    Text(text = "Aceptar", color = Color(0xFF007AFF))
                 }
             }
         )
@@ -202,73 +208,3 @@ suspend fun fetchCalendarEvents(accessToken: String, calendarId: String): List<E
         null
     }
 }
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Preview
-@Composable
-fun PreviewHomeView() {
-    // Crear un NavController simulado para el preview
-    val navController = rememberNavController()
-    Calendario("","")
-}
-
-
-/*
-suspend fun fetchCalendarId(accessToken: String, calendarName: String): String {
-    return withContext(Dispatchers.IO) {
-        try {
-            Log.d("fetchCalendarId", "Iniciando fetchCalendarId")
-            val graphClient = GraphServiceClient
-                .builder()
-                .authenticationProvider { CompletableFuture.completedFuture(accessToken) }
-                .buildClient()
-
-            Log.d("fetchCalendarId", "Graph client construido")
-
-            val calendars = graphClient
-                .me()
-                .calendars()
-                .buildRequest()
-                ?.get()
-                ?.currentPage
-
-            Log.d("fetchCalendarId", "Calendarios obtenidos: ${calendars?.size ?: 0}")
-
-            val calendarId = calendars?.firstOrNull { it.name == calendarName }?.id ?: ""
-            Log.d("fetchCalendarId", "Calendar ID encontrado: $calendarId")
-            calendarId
-        } catch (e: Exception) {
-            Log.e("fetchCalendarId", "Error fetching calendar ID", e)
-            ""
-        }
-    }
-}
-*/
-/*suspend fun fetchSharedCalendarEvents(accessToken: String, calendarId: String): List<Event> {
-    return withContext(Dispatchers.IO) {
-        try {
-            Log.d("fetchSharedCalendarEvents", "Iniciando fetchSharedCalendarEvents")
-            val graphClient = GraphServiceClient
-                .builder()
-                .authenticationProvider { CompletableFuture.completedFuture(accessToken) }
-                .buildClient()
-
-            Log.d("fetchSharedCalendarEvents", "Graph client construido")
-
-            val events = graphClient
-                .me()
-                ?.calendars(calendarId)
-                ?.events()
-                ?.buildRequest()
-                ?.get()
-                ?.currentPage ?: emptyList()
-
-            Log.d("fetchSharedCalendarEvents", "Number of events found: ${events.size}")
-
-            events
-        } catch (e: Exception) {
-            Log.e("fetchSharedCalendarEvents", "Error fetching calendar events", e)
-            emptyList()
-        }
-    }
-}*/
