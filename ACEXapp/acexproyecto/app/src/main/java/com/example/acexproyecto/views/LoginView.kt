@@ -207,7 +207,7 @@ fun LoginView(navController: NavController) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.logorecortado),
+                    painter = painterResource(id = R.drawable.logfinalsinnombre),
                     contentDescription = "Logo",
                     modifier = Modifier
                         .size(300.dp)

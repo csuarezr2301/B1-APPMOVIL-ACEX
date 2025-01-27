@@ -91,7 +91,7 @@ fun TopBar(navController: NavController) {
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.logosinnombre),
+                    painter = painterResource(id = R.drawable.logfinalsinnombre),
                     contentDescription = "Logo de la App",
                     modifier = Modifier
                         .size(100.dp)
