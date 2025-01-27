@@ -155,7 +155,7 @@ git clone:  https://github.com/csuarezr2301/B1-APPMOVIL-ACEX
 
 ## 📑 Manual de usuario  
 Consulta el manual de usuario en PDF para detalles sobre el uso de la app:  
-📄 <a href="https://drive.google.com/uc?export=download&id=1pUmubahHZevSJ5sq94tHa3mf8E9e-VI-" download>Descargar Manual de Usuario</a>
+📄 <a href="https://drive.google.com/file/d/1pUmubahHZevSJ5sq94tHa3mf8E9e-VI-" download>Descargar Manual de Usuario</a>
 
 ---
 ## 📚 Bibliografía y Webgrafía
