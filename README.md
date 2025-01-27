@@ -56,7 +56,7 @@ La aplicación desarrollada proporciona una solución para gestionar las **activ
 
 ### 🛠 Lo que falta por Implementar
 
-1. Mejora en la sincronización de datos: Aunque la sincronización con la base de datos está funcionando, se requiere optimización para mejorar el rendimiento y la velocidad de carga.
+
 ---
 
 ## 🔧 Módulos y Tecnologías
