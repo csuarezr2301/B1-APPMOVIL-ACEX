@@ -75,8 +75,83 @@ La aplicación desarrollada proporciona una solución para gestionar las **activ
 
 ---
 ## 🗂 Estructura del Proyecto
+Este proyecto sigue una estructura organizada en carpetas. La estructura es la siguiente:
+├── 📂 camara
+│   └── 📄 CamaraView.kt
+├── 📂 components
+│   └── 📄 Calendario.kt
+├── 📂 model
+│   ├── 📄 ActividadResponse.kt
+│   ├── 📄 ApiService.kt
+│   ├── 📄 CursoResponse.kt
+│   ├── 📄 DepartamentoResponse.kt
+│   ├── 📄 GrupoParticipanteResponse.kt
+│   ├── 📄 GrupoResponse.kt
+│   ├── 📄 PhotoResponse.kt
+│   ├── 📄 ProfesorParticipanteResponse.kt
+│   ├── 📄 ProfesorResponsableResponse.kt
+│   ├── 📄 ProfesorResponse.kt
+│   └── 📄 RetrofitClient.kt
+├── 📂 navigation
+│   └── 📄 NavManager.kt
+├── 📂 objetos
+│   ├── 📄 Loading.kt
+│   └── 📄 Usuario.kt
+├── 📂 ui.theme
+├── 📂 utils
+│   ├── 📄 Firebase.kt
+│   └── 📄 Utilidades.kt
+├── 📂 views
+│   ├── 📄 ActividadesListView.kt
+│   ├── 📄 ActivitiesView.kt
+│   ├── 📄 ActivityDetailView.kt
+│   ├── 📄 ChatView.kt
+│   ├── 📄 HomeView.kt
+│   ├── 📄 LocalizacionView.kt
+│   ├── 📄 LoginView.kt
+│   ├── 📄 SettingView.kt
+│   └── 📄 MainActivity.kt
 
-A continuación, se detalla el propósito de cada carpeta o módulo dentro de la aplicación móvil:
+📂 camara
+Esta carpeta se encarga de gestionar las funcionalidades relacionadas con la cámara en la aplicación móvil. En este módulo, el archivo principal CamaraView.kt manejará la interacción de la cámara para que los usuarios puedan tomar fotos durante las actividades y subirlas a la plataforma.
+
+📂 components
+En esta carpeta se encuentran los componentes visuales reutilizables que forman parte de la interfaz de usuario (UI). En este caso el calendario de la app.
+
+📂 model
+Esta carpeta contiene los modelos de datos y las clases de servicio necesarias para la comunicación con el backend (a través de API). Aquí se definen las estructuras de datos utilizadas en la app.
+
+- **ActividadResponse.kt**: Define la respuesta esperada del servidor para las actividades (información de cada actividad, como nombre, fecha, participantes, etc.).
+- **ApiService.kt**: Contiene las interfaces y métodos para hacer peticiones a la API (como obtener información de actividades, registrar asistencia, etc.).
+- **CursoResponse.kt**: Modelo que representa la respuesta del servidor para información sobre los cursos relacionados con las actividades.
+- **DepartamentoResponse.kt**: Representa los datos relacionados con los departamentos involucrados en las actividades.
+- **GrupoParticipanteResponse.kt**: Información sobre los grupos de participantes de las actividades.
+- **GrupoResponse.kt**: Representa un grupo específico asociado a las actividades.
+- **PhotoResponse.kt**: Responde con la información relacionada a las fotos que los usuarios suben durante las actividades.
+- **ProfesorParticipanteResponse.kt**: Información sobre los profesores participantes en una actividad.
+- **ProfesorResponsableResponse.kt**: Representa al profesor responsable de la actividad.
+- **ProfesorResponse.kt**: Contiene los datos de los profesores, que pueden ser consultados a través de la app.
+- **RetrofitClient.kt**: Configura la instancia de Retrofit para las llamadas HTTP hacia el backend.
+
+📂 navigation
+La carpeta navigation gestiona la navegación de la aplicación.
+
+📂 objetos
+Esta carpeta almacena objetos o clases que representan datos generales o utilitarios utilizados en la app.
+
+📂 ui.theme
+Esta carpeta contiene los archivos que definen los temas visuales de la app, incluyendo la personalización de colores, tipografías, y otros aspectos visuales.
+
+📂 utils
+Contiene funciones y utilidades que son utilizadas en distintas partes del proyecto. Generalmente se guardan aquí las funciones auxiliares que no encajan en otras categorías.
+
+Firebase.kt: Funciones relacionadas con la integración de Firebase, como autenticación, manejo de bases de datos en tiempo real, y almacenamiento.
+Utilidades.kt: Funciones generales de utilidad que pueden ser reutilizadas en diferentes partes de la app, como validaciones, transformaciones de datos, entre otros.
+
+📂 views
+Esta carpeta contiene las vistas principales de la aplicación, que son las pantallas con las que los usuarios interactúan.
+
+A continuación, se detalla el propósito de cada módulo dentro de la carpeta views:
 
 ### **Settingview**
 Este módulo gestiona la **vista de la información del usuario** y permite al usuario cambiar entre los **temas claro y oscuro** de la aplicación. Es donde se encuentran las configuraciones personalizadas del usuario.
