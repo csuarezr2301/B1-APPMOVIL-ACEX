@@ -314,11 +314,9 @@ fun ActivityDetailContent(
 
                 items(imagesActividad) { photo ->
                     val imageUrl = photo.urlFoto?.let {
-                        baseUrl + photo.actividad.titulo.replace(
-                            " ",
-                            "_"
-                        ) + "/" + it.substringAfterLast("\\").replace(" ", "_")
+                        baseUrl + photo.actividad.id + "/" + it.substringAfterLast("\\").replace(" ", "_")
                     } ?: ""
+                    Log.d("URL", imageUrl)
                     Box(
                         modifier = Modifier
                             .size(120.dp)
