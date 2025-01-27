@@ -88,10 +88,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.pm.PackageManager
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.acexproyecto.model.ProfesorParticipanteResponse
 import com.example.acexproyecto.objetos.Usuario
@@ -211,6 +214,16 @@ fun ActivityDetailContent(
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // Botón de retroceso dentro de LazyColumn
+        item {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowBack,
+                    contentDescription = "Regresar",
+                    tint = TextPrimary
+                )
+            }
+        }
         item {
             Spacer(modifier = Modifier.height(35.dp))
         }
@@ -1668,3 +1681,4 @@ fun compressImage(context: Context, uri: Uri): File {
     tempFile.writeBytes(byteArray)
     return tempFile
 }
+

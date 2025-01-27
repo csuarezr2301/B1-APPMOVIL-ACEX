@@ -62,7 +62,7 @@ fun SettingsViewapp(
     isDarkMode: Boolean,
     onThemeChanged: (Boolean) -> Unit
 ) {
-    val notificationsState = remember { mutableStateOf(true) }
+    val notificationsState = remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
 
     Column(
