@@ -76,41 +76,43 @@ La aplicación desarrollada proporciona una solución para gestionar las **activ
 ---
 ## 🗂 Estructura del Proyecto
 Este proyecto sigue una estructura organizada en carpetas. La estructura es la siguiente:
-├── 📂 camara
-│   └── 📄 CamaraView.kt
-├── 📂 components
-│   └── 📄 Calendario.kt
-├── 📂 model
-│   ├── 📄 ActividadResponse.kt
-│   ├── 📄 ApiService.kt
-│   ├── 📄 CursoResponse.kt
-│   ├── 📄 DepartamentoResponse.kt
-│   ├── 📄 GrupoParticipanteResponse.kt
-│   ├── 📄 GrupoResponse.kt
-│   ├── 📄 PhotoResponse.kt
-│   ├── 📄 ProfesorParticipanteResponse.kt
-│   ├── 📄 ProfesorResponsableResponse.kt
-│   ├── 📄 ProfesorResponse.kt
-│   └── 📄 RetrofitClient.kt
-├── 📂 navigation
-│   └── 📄 NavManager.kt
-├── 📂 objetos
-│   ├── 📄 Loading.kt
-│   └── 📄 Usuario.kt
-├── 📂 ui.theme
-├── 📂 utils
-│   ├── 📄 Firebase.kt
-│   └── 📄 Utilidades.kt
-├── 📂 views
-│   ├── 📄 ActividadesListView.kt
-│   ├── 📄 ActivitiesView.kt
-│   ├── 📄 ActivityDetailView.kt
-│   ├── 📄 ChatView.kt
-│   ├── 📄 HomeView.kt
-│   ├── 📄 LocalizacionView.kt
-│   ├── 📄 LoginView.kt
-│   ├── 📄 SettingView.kt
-│   └── 📄 MainActivity.kt
+
+├── 📂 **camara**  
+│   └── 📄 CamaraView.kt  
+├── 📂 **components**  
+│   └── 📄 Calendario.kt  
+├── 📂 **model**  
+│   ├── 📄 ActividadResponse.kt  
+│   ├── 📄 ApiService.kt  
+│   ├── 📄 CursoResponse.kt  
+│   ├── 📄 DepartamentoResponse.kt  
+│   ├── 📄 GrupoParticipanteResponse.kt  
+│   ├── 📄 GrupoResponse.kt  
+│   ├── 📄 PhotoResponse.kt  
+│   ├── 📄 ProfesorParticipanteResponse.kt  
+│   ├── 📄 ProfesorResponsableResponse.kt  
+│   ├── 📄 ProfesorResponse.kt  
+│   └── 📄 RetrofitClient.kt  
+├── 📂 **navigation**  
+│   └── 📄 NavManager.kt  
+├── 📂 **objetos**  
+│   ├── 📄 Loading.kt  
+│   └── 📄 Usuario.kt  
+├── 📂 **ui.theme**  
+├── 📂 **utils**  
+│   ├── 📄 Firebase.kt  
+│   └── 📄 Utilidades.kt  
+├── 📂 **views**  
+│   ├── 📄 ActividadesListView.kt  
+│   ├── 📄 ActivitiesView.kt  
+│   ├── 📄 ActivityDetailView.kt  
+│   ├── 📄 ChatView.kt  
+│   ├── 📄 HomeView.kt  
+│   ├── 📄 LocalizacionView.kt  
+│   ├── 📄 LoginView.kt  
+│   ├── 📄 SettingView.kt  
+│   └── 📄 MainActivity.kt  
+
 
 📂 camara
 Esta carpeta se encarga de gestionar las funcionalidades relacionadas con la cámara en la aplicación móvil. En este módulo, el archivo principal CamaraView.kt manejará la interacción de la cámara para que los usuarios puedan tomar fotos durante las actividades y subirlas a la plataforma.
@@ -153,16 +155,16 @@ Esta carpeta contiene las vistas principales de la aplicación, que son las pant
 
 A continuación, se detalla el propósito de cada módulo dentro de la carpeta views:
 
-### **Settingview**
+- ### **Settingview**
 Este módulo gestiona la **vista de la información del usuario** y permite al usuario cambiar entre los **temas claro y oscuro** de la aplicación. Es donde se encuentran las configuraciones personalizadas del usuario.
 
-### **Loginview**
+- ### **Loginview**
 Es la pantalla **inicial de inicio de sesión**. En esta vista, el usuario introduce sus credenciales para autenticarse en la aplicación. Una vez autenticado, se redirige a la vista principal de la app.
 
-### **Localizacionview**
+- ### **Localizacionview**
 Este módulo muestra un **mapa interactivo** con los **puntos de interés** de las actividades. Los puntos de interés se marcan en el mapa para que los usuarios puedan ver las ubicaciones relacionadas con las actividades extraescolares.
 
-### **Homeview**
+- ### **Homeview**
 La vista principal de la aplicación, donde se muestra:
 - Información básica del **usuario**.
 - Un **calendario** con las actividades programadas.
@@ -170,10 +172,10 @@ La vista principal de la aplicación, donde se muestra:
 - **Cerrar sesión**.
 - Acceder a las **Preguntas Frecuentes** donde se puede descargar un documento con las normas relativas a las actividades.
 
-### **Chatview**
+- ### **Chatview**
 En este módulo se encuentra el **chat** con las actividades del usuario registrado. Permite la comunicación con otros usuarios o administradores sobre las actividades en las que está involucrado.
 
-### **Activitydetailview**
+- ### **Activitydetailview**
 Este módulo muestra toda la información detallada de una actividad específica. Aquí se puede:
 - **Editar información** de la actividad (si el usuario tiene permisos).
 - Ver **nombre**, **alumnos asistentes**, **profesores asistentes**.
@@ -182,7 +184,7 @@ Este módulo muestra toda la información detallada de una actividad específica
 - Mostrar un **mapa** con la **localización** de la actividad.
 - Añadir **observaciones** relacionadas con la actividad.
 
-### **Activityview**
+- ### **Activityview**
 Este módulo muestra un listado de **todas las actividades** disponibles y permite **filtrar** por distintas categorías. Además, se muestran las actividades asociadas al usuario. En la **Top App Bar**, se encuentran opciones para:
 
 ---
