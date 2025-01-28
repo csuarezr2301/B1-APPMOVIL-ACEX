@@ -65,12 +65,12 @@ Dentro del mapa de la actividad, faltaría implementar las multiples localizacio
 | **Frontend Móvil**     | Kotlin (Android Studio)         |  
 | **Backend**            | Java (Spring Boot)               |  
 | **Base de Datos**      | SQL Server en Azure             |  
-| **Autenticación**      | Microsoft Azure AD              |  
+| **Autenticación**      | Microsoft Graph, Entra ID        |  
 | **Mapa Interactivo**   | Google Maps API                 |  
 | **Almacenamiento**     | Azure Storage                   |  
 | **Navegación**         | Android Navigation Component   |  
 | **Sistema de Fotos**   | CameraX, Glide, Coil           |  
-| **Chat**               | Firebase Firestore, MSAL       |  
+| **Chat**               | Firebase Firestore          |  
 | **Coroutines**         | Kotlin Coroutines               |  
 
 ---
