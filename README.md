@@ -33,7 +33,7 @@ Grupo B1  Alumnos:
 
 --- 
 ## ⭐ Características Principales
-- **Registro y gestión de actividades** programadas y realizadas.
+- **Gestión de los datos de las actividades** programadas.
 - **Subida y visualización de imágenes** de las actividades.
 - **Registro de asistencia** de los alumnos.
 - **Mapa interactivo** para marcar puntos de interés en actividades extraescolares.
