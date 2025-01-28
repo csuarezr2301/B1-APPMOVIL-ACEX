@@ -55,7 +55,7 @@ La aplicación desarrollada proporciona una solución para gestionar las **activ
 
 
 ### 🛠 Lo que falta por Implementar
-
+Dentro del mapa de la actividad, faltaría implementar las multiples localizaciones correspondientes a los puntos de interes de dicha actividad.
 
 ---
 
