@@ -430,7 +430,7 @@ fun AllActividades(
     }
 
     if (isLoading.value) {
-        CircularProgressIndicator(modifier = Modifier.fillMaxSize())
+        //CircularProgressIndicator(modifier = Modifier.fillMaxSize())
     } else if (actividades.isEmpty() && errorMessage.value == null) {
         Column(
             modifier = Modifier.fillMaxSize(),
