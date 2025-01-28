@@ -78,41 +78,48 @@ La aplicación desarrollada proporciona una solución para gestionar las **activ
 Este proyecto sigue una estructura organizada en carpetas. La estructura es la siguiente:
 
 El proyecto está dividido en varias carpetas, cada una con un propósito específico:
+1. 📂 **camara**  
+   - **CamaraView.kt**: Gestión de la cámara para tomar fotos durante las actividades y subirlas.
 
-1. 📂 camara
-CamaraView.kt: Gestión de la cámara para tomar fotos durante las actividades y subirlas.
-2. 📂 components
-Calendario.kt: Componente reutilizable para mostrar el calendario de actividades.
-3. 📂 model
-Contiene los modelos de datos que estructuran la información obtenida desde el backend (a través de API).
-Archivos clave:
-ActividadResponse.kt: Respuesta sobre las actividades.
-ApiService.kt: Métodos para hacer peticiones HTTP.
-CursoResponse.kt, DepartamentoResponse.kt, GrupoResponse.kt, etc.: Modelos relacionados con cursos, departamentos, grupos y participantes.
-4. 📂 navigation
-NavManager.kt: Gestión de la navegación de la app.
-5. 📂 objetos
-Clases y objetos con datos generales o utilitarios.
-Archivos clave:
-Loading.kt: Visualización de carga.
-Usuario.kt: Información sobre el usuario.
-6. 📂 ui.theme
-Personalización de la interfaz de usuario (colores, tipografías, etc.).
-7. 📂 utils
-Funciones auxiliares reutilizables.
-Archivos clave:
-Firebase.kt: Funciones para interactuar con Firebase (autenticación, base de datos, etc.).
-Utilidades.kt: Funciones generales de utilidad.
-8. 📂 views
-Contiene las pantallas principales de la aplicación.
-Módulos clave:
-SettingView: Configuración del usuario y tema claro/oscuro.
-LoginView: Pantalla de inicio de sesión.
-LocalizacionView: Mapa interactivo con puntos de interés de las actividades.
-HomeView: Vista principal con calendario, actividades y opciones de usuario.
-ChatView: Comunicación sobre actividades con otros usuarios.
-ActivityDetailView: Detalles de una actividad, incluida la opción de añadir fotos, ver participantes y más.
-ActivityView: Listado de actividades disponibles con opciones de filtrado.
+2. 📂 **components**  
+   - **Calendario.kt**: Componente reutilizable para mostrar el calendario de actividades.
+
+3. 📂 **model**  
+   Contiene los modelos de datos que estructuran la información obtenida desde el backend (a través de API).  
+   Archivos clave:
+   - **ActividadResponse.kt**: Respuesta sobre las actividades.
+   - **ApiService.kt**: Métodos para hacer peticiones HTTP.
+   - **CursoResponse.kt, DepartamentoResponse.kt, GrupoResponse.kt, etc.**: Modelos relacionados con cursos, departamentos, grupos y participantes.
+
+4. 📂 **navigation**  
+   - **NavManager.kt**: Gestión de la navegación de la app.
+
+5. 📂 **objetos**  
+   Clases y objetos con datos generales o utilitarios.  
+   Archivos clave:
+   - **Loading.kt**: Visualización de carga.
+   - **Usuario.kt**: Información sobre el usuario.
+
+6. 📂 **ui.theme**  
+   Personalización de la interfaz de usuario (colores, tipografías, etc.).
+
+7. 📂 **utils**  
+   Funciones auxiliares reutilizables.  
+   Archivos clave:
+   - **Firebase.kt**: Funciones para interactuar con Firebase (autenticación, base de datos, etc.).
+   - **Utilidades.kt**: Funciones generales de utilidad.
+
+8. 📂 **views**  
+   Contiene las pantallas principales de la aplicación.  
+   Módulos clave:
+   - **SettingView**: Configuración del usuario y tema claro/oscuro.
+   - **LoginView**: Pantalla de inicio de sesión.
+   - **LocalizacionView**: Mapa interactivo con puntos de interés de las actividades.
+   - **HomeView**: Vista principal con calendario, actividades y opciones de usuario.
+   - **ChatView**: Comunicación sobre actividades con otros usuarios.
+   - **ActivityDetailView**: Detalles de una actividad, incluida la opción de añadir fotos, ver participantes y más.
+   - **ActivityView**: Listado de actividades disponibles con opciones de filtrado.
+
 ---
 ### 🛠 Características Especiales
 
