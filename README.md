@@ -77,116 +77,42 @@ La aplicación desarrollada proporciona una solución para gestionar las **activ
 ## 🗂 Estructura del Proyecto
 Este proyecto sigue una estructura organizada en carpetas. La estructura es la siguiente:
 
-├── 📂 **camara**  
-│   └── 📄 CamaraView.kt  
-├── 📂 **components**  
-│   └── 📄 Calendario.kt  
-├── 📂 **model**  
-│   ├── 📄 ActividadResponse.kt  
-│   ├── 📄 ApiService.kt  
-│   ├── 📄 CursoResponse.kt  
-│   ├── 📄 DepartamentoResponse.kt  
-│   ├── 📄 GrupoParticipanteResponse.kt  
-│   ├── 📄 GrupoResponse.kt  
-│   ├── 📄 PhotoResponse.kt  
-│   ├── 📄 ProfesorParticipanteResponse.kt  
-│   ├── 📄 ProfesorResponsableResponse.kt  
-│   ├── 📄 ProfesorResponse.kt  
-│   └── 📄 RetrofitClient.kt  
-├── 📂 **navigation**  
-│   └── 📄 NavManager.kt  
-├── 📂 **objetos**  
-│   ├── 📄 Loading.kt  
-│   └── 📄 Usuario.kt  
-├── 📂 **ui.theme**  
-├── 📂 **utils**  
-│   ├── 📄 Firebase.kt  
-│   └── 📄 Utilidades.kt  
-├── 📂 **views**  
-│   ├── 📄 ActividadesListView.kt  
-│   ├── 📄 ActivitiesView.kt  
-│   ├── 📄 ActivityDetailView.kt  
-│   ├── 📄 ChatView.kt  
-│   ├── 📄 HomeView.kt  
-│   ├── 📄 LocalizacionView.kt  
-│   ├── 📄 LoginView.kt  
-│   ├── 📄 SettingView.kt  
-│   └── 📄 MainActivity.kt  
+El proyecto está dividido en varias carpetas, cada una con un propósito específico:
 
-
-📂 camara
-Esta carpeta se encarga de gestionar las funcionalidades relacionadas con la cámara en la aplicación móvil. En este módulo, el archivo principal CamaraView.kt manejará la interacción de la cámara para que los usuarios puedan tomar fotos durante las actividades y subirlas a la plataforma.
-
-📂 components
-En esta carpeta se encuentran los componentes visuales reutilizables que forman parte de la interfaz de usuario (UI). En este caso el calendario de la app.
-
-📂 model
-Esta carpeta contiene los modelos de datos y las clases de servicio necesarias para la comunicación con el backend (a través de API). Aquí se definen las estructuras de datos utilizadas en la app.
-
-- **ActividadResponse.kt**: Define la respuesta esperada del servidor para las actividades (información de cada actividad, como nombre, fecha, participantes, etc.).
-- **ApiService.kt**: Contiene las interfaces y métodos para hacer peticiones a la API (como obtener información de actividades, registrar asistencia, etc.).
-- **CursoResponse.kt**: Modelo que representa la respuesta del servidor para información sobre los cursos relacionados con las actividades.
-- **DepartamentoResponse.kt**: Representa los datos relacionados con los departamentos involucrados en las actividades.
-- **GrupoParticipanteResponse.kt**: Información sobre los grupos de participantes de las actividades.
-- **GrupoResponse.kt**: Representa un grupo específico asociado a las actividades.
-- **PhotoResponse.kt**: Responde con la información relacionada a las fotos que los usuarios suben durante las actividades.
-- **ProfesorParticipanteResponse.kt**: Información sobre los profesores participantes en una actividad.
-- **ProfesorResponsableResponse.kt**: Representa al profesor responsable de la actividad.
-- **ProfesorResponse.kt**: Contiene los datos de los profesores, que pueden ser consultados a través de la app.
-- **RetrofitClient.kt**: Configura la instancia de Retrofit para las llamadas HTTP hacia el backend.
-
-📂 navigation
-La carpeta navigation gestiona la navegación de la aplicación.
-
-📂 objetos
-Esta carpeta almacena objetos o clases que representan datos generales o utilitarios utilizados en la app.
-
-📂 ui.theme
-Esta carpeta contiene los archivos que definen los temas visuales de la app, incluyendo la personalización de colores, tipografías, y otros aspectos visuales.
-
-📂 utils
-Contiene funciones y utilidades que son utilizadas en distintas partes del proyecto. Generalmente se guardan aquí las funciones auxiliares que no encajan en otras categorías.
-
-Firebase.kt: Funciones relacionadas con la integración de Firebase, como autenticación, manejo de bases de datos en tiempo real, y almacenamiento.
-Utilidades.kt: Funciones generales de utilidad que pueden ser reutilizadas en diferentes partes de la app, como validaciones, transformaciones de datos, entre otros.
-
-📂 views
-Esta carpeta contiene las vistas principales de la aplicación, que son las pantallas con las que los usuarios interactúan.
-
-A continuación, se detalla el propósito de cada módulo dentro de la carpeta views:
-
-- ### **Settingview**
-Este módulo gestiona la **vista de la información del usuario** y permite al usuario cambiar entre los **temas claro y oscuro** de la aplicación. Es donde se encuentran las configuraciones personalizadas del usuario.
-
-- ### **Loginview**
-Es la pantalla **inicial de inicio de sesión**. En esta vista, el usuario introduce sus credenciales para autenticarse en la aplicación. Una vez autenticado, se redirige a la vista principal de la app.
-
-- ### **Localizacionview**
-Este módulo muestra un **mapa interactivo** con los **puntos de interés** de las actividades. Los puntos de interés se marcan en el mapa para que los usuarios puedan ver las ubicaciones relacionadas con las actividades extraescolares.
-
-- ### **Homeview**
-La vista principal de la aplicación, donde se muestra:
-- Información básica del **usuario**.
-- Un **calendario** con las actividades programadas.
-- Un **LazyRow** que muestra las actividades a realizar a partir del **día de hoy**.
-- **Cerrar sesión**.
-- Acceder a las **Preguntas Frecuentes** donde se puede descargar un documento con las normas relativas a las actividades.
-
-- ### **Chatview**
-En este módulo se encuentra el **chat** con las actividades del usuario registrado. Permite la comunicación con otros usuarios o administradores sobre las actividades en las que está involucrado.
-
-- ### **Activitydetailview**
-Este módulo muestra toda la información detallada de una actividad específica. Aquí se puede:
-- **Editar información** de la actividad (si el usuario tiene permisos).
-- Ver **nombre**, **alumnos asistentes**, **profesores asistentes**.
-- Ver y añadir **fotos** de la actividad.
-- Consultar la **descripción** de la actividad.
-- Mostrar un **mapa** con la **localización** de la actividad.
-- Añadir **observaciones** relacionadas con la actividad.
-
-- ### **Activityview**
-Este módulo muestra un listado de **todas las actividades** disponibles y permite **filtrar** por distintas categorías. Además, se muestran las actividades asociadas al usuario. En la **Top App Bar**, se encuentran opciones para:
-
+1. 📂 camara
+CamaraView.kt: Gestión de la cámara para tomar fotos durante las actividades y subirlas.
+2. 📂 components
+Calendario.kt: Componente reutilizable para mostrar el calendario de actividades.
+3. 📂 model
+Contiene los modelos de datos que estructuran la información obtenida desde el backend (a través de API).
+Archivos clave:
+ActividadResponse.kt: Respuesta sobre las actividades.
+ApiService.kt: Métodos para hacer peticiones HTTP.
+CursoResponse.kt, DepartamentoResponse.kt, GrupoResponse.kt, etc.: Modelos relacionados con cursos, departamentos, grupos y participantes.
+4. 📂 navigation
+NavManager.kt: Gestión de la navegación de la app.
+5. 📂 objetos
+Clases y objetos con datos generales o utilitarios.
+Archivos clave:
+Loading.kt: Visualización de carga.
+Usuario.kt: Información sobre el usuario.
+6. 📂 ui.theme
+Personalización de la interfaz de usuario (colores, tipografías, etc.).
+7. 📂 utils
+Funciones auxiliares reutilizables.
+Archivos clave:
+Firebase.kt: Funciones para interactuar con Firebase (autenticación, base de datos, etc.).
+Utilidades.kt: Funciones generales de utilidad.
+8. 📂 views
+Contiene las pantallas principales de la aplicación.
+Módulos clave:
+SettingView: Configuración del usuario y tema claro/oscuro.
+LoginView: Pantalla de inicio de sesión.
+LocalizacionView: Mapa interactivo con puntos de interés de las actividades.
+HomeView: Vista principal con calendario, actividades y opciones de usuario.
+ChatView: Comunicación sobre actividades con otros usuarios.
+ActivityDetailView: Detalles de una actividad, incluida la opción de añadir fotos, ver participantes y más.
+ActivityView: Listado de actividades disponibles con opciones de filtrado.
 ---
 ### 🛠 Características Especiales
 
