@@ -80,14 +80,14 @@ Este proyecto sigue una estructura organizada en carpetas. La estructura es la s
 ```
 src/main/java  
 └── com.proyectos.proyectosapi  
-    ├──  **camara**          # Gestión de la cámara  
-    ├──  **components**      # Componentes reutilizables  
-    ├──  **model**           # Modelos de datos  
-    ├──  **navigation**      # Gestión de navegación  
-    ├──  **objetos**         # Clases y objetos generales  
-    ├──  **ui.theme**        # Personalización de la interfaz de usuario  
-    ├──  **utils**           # Funciones auxiliares  
-    └──  **views**           # Pantallas principales de la aplicación
+    ├──  camara          # Gestión de la cámara  
+    ├──  components      # Componentes reutilizables  
+    ├──  model           # Modelos de datos  
+    ├──  navigation      # Gestión de navegación  
+    ├──  objetos         # Clases y objetos generales  
+    ├──  ui.theme        # Personalización de la interfaz de usuario  
+    ├──  utils           # Funciones auxiliares  
+    └──  views           # Pantallas principales de la aplicación
 
 ```
 
