@@ -77,8 +77,9 @@ La aplicación desarrollada proporciona una solución para gestionar las **activ
 ## 🗂 Estructura del Proyecto
 Este proyecto sigue una estructura organizada en carpetas. La estructura es la siguiente:
 
-app/kotlin+java/  
-└── com.example.acexproyecto  
+```
+src/main/java  
+└── com.proyectos.proyectosapi  
     ├──  **camara**          # Gestión de la cámara  
     ├──  **components**      # Componentes reutilizables  
     ├──  **model**           # Modelos de datos  
@@ -86,7 +87,9 @@ app/kotlin+java/
     ├──  **objetos**         # Clases y objetos generales  
     ├──  **ui.theme**        # Personalización de la interfaz de usuario  
     ├──  **utils**           # Funciones auxiliares  
-    └──  **views**           # Pantallas principales de la aplicación  
+    └──  **views**           # Pantallas principales de la aplicación
+
+```
 
 Especificaciones de cada carpeta:
 1. 📂 **camara**  
